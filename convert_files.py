@@ -30,25 +30,40 @@ ppt = win32.gencache.EnsureDispatch('Powerpoint.Application')
 ppt.DisplayAlerts = constants.ppAlertsNone
 
 
+#source_dir = str(current_dir) + '/source'
+source_dir = 'C:\\C'
+issue_target_dir = 'C:\\CI'
+legacy_target_dir = 'C:\\CB'
+
+logfile = open('C:\\log.txt', 'a')
+
 def get_magic(path):
     with open (path, 'rb') as myfile:
         header = myfile.read(4)
         return str(binascii.hexlify(header))
 
+
+def copy_file(source, target):
+    os.makedirs(target.replace(os.path.basename(target), ''), exist_ok = True)
+    shutil.copyfile(source, target)
+
+
 def handle_error(path):
-    #logfile = open(pathlib.Path(str(current_dir) + 'log.txt'), 'w')
-    print(f'ERROR: could not convert \'{path}\'')
+    error_msg = f'ERROR: could not convert \'{path}\' \n'
+    print(error_msg)
+    logfile.write(error_msg)
     placeholder = open(path + '.txt', 'w')
     placeholder.write('file could not be converted')
     placeholder.close()
-    relpath = path.replace(str(current_dir), '')
-    newPath = 'C:\\FCI' + relpath
-    os.makedirs(newPath.replace(os.path.basename(newPath), ''), exist_ok = True)
-    shutil.copyfile(path, newPath)
+    relpath = path.replace(str(source_dir), '')
+    newPath = issue_target_dir + relpath
+    copy_file(path, newPath)
     os.remove(path)
     
+    
+count = 0
 
-for path in pathlib.Path(str(current_dir) + '/source').rglob('*.*'):
+for path in pathlib.Path(source_dir).rglob('*.*'):
     extension = pathlib.Path(path).suffix[1:].lower()
 
     path = str(path)
@@ -59,14 +74,14 @@ for path in pathlib.Path(str(current_dir) + '/source').rglob('*.*'):
             if '504b0304' in get_magic(path):
                 continue
             else:
-                print('fake file detected')
+                print('WARNING: fake file detected')
                 os.rename(path, path[:-1])
                 path = path[:-1]
         
         print(path)
         
         try:
-            doc = word.Documents.Open(path)
+            doc = word.Documents.Open(path, ConfirmConversions=False, Visible=False)
         except:
             handle_error(path)
             continue
@@ -84,9 +99,11 @@ for path in pathlib.Path(str(current_dir) + '/source').rglob('*.*'):
         else:
             new_path = path + 'x'
 
-        word.ActiveDocument.SaveAs(new_path, FileFormat=ff)
+        word.ActiveDocument.SaveAs(new_path, ff)
         doc.Close(False)
+        copy_file(path, path.replace(source_dir, legacy_target_dir))
         os.remove(path)
+        count += 1
         
     elif extension in ['xlsx', 'xls', 'xlsm', 'xlsb', 'xlt', 'xltm', 'ods']:
         ff = XLSX_FILE_FORMAT
@@ -101,7 +118,10 @@ for path in pathlib.Path(str(current_dir) + '/source').rglob('*.*'):
         print(path)
         
         try:
+            excel.DisplayAlerts = False
+            excel.EnableEvents = False
             wb = excel.Workbooks.Open(path)
+            wb.Application.DisplayAlerts = False
         except:
             handle_error(path)
             continue
@@ -120,9 +140,11 @@ for path in pathlib.Path(str(current_dir) + '/source').rglob('*.*'):
         else:
             new_path = path + 'x'
         
-        wb.SaveAs(new_path, FileFormat = ff)
+        wb.SaveAs(new_path, FileFormat=ff, ConflictResolution=2)
         wb.Close()
+        copy_file(path, path.replace(source_dir, legacy_target_dir))
         os.remove(path)
+        count += 1
         
     elif extension in ['pptx', 'ppt', 'pptm', 'pot', 'potm', 'pps', 'ppsm', 'odp']:
         ff = PPTX_FILE_FORMAT
@@ -137,7 +159,7 @@ for path in pathlib.Path(str(current_dir) + '/source').rglob('*.*'):
         print(path)
         
         try:
-            presentation = ppt.Presentations.Open(path, WithWindow = False)
+            presentation = ppt.Presentations.Open(path, WithWindow=False)
         except:
             handle_error(path)
             continue
@@ -161,14 +183,26 @@ for path in pathlib.Path(str(current_dir) + '/source').rglob('*.*'):
             
         presentation.SaveAs(new_path, ff)
         presentation.Close()
+        copy_file(path, path.replace(source_dir, legacy_target_dir))
         os.remove(path)
+        count += 1
        
 try:     
     word.Application.Quit()
+except:
+    pass
+    
+try:     
     excel.Application.Quit()
+except:
+    pass
+    
+try:     
     ppt.Quit()
 except:
     pass
 
-input("Press Enter to continue...")
+logfile.close()
+print(f'converted {count} files')
+input('Press Enter to continue...')
 
