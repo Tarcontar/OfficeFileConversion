@@ -89,7 +89,7 @@ def process_file(path):
         print(path)
         
         try:
-            doc = word.Documents.Open(path, ConfirmConversions=False, Visible=False, PasswordDocument="")
+            doc = word.Documents.Open(path, ConfirmConversions=False, Visible=False, PasswordDocument='')
         except:
             handle_error(path)
             return 0
@@ -161,7 +161,7 @@ def process_file(path):
         print(path)
         
         try:
-            presentation = ppt.Presentations.Open(path, WithWindow=False)
+            presentation = ppt.Presentations.Open(path, WithWindow=False, Password='')
         except:
             handle_error(path)
             return 0
