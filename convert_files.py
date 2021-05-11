@@ -8,7 +8,6 @@ import win32com.client as win32
 from win32com.client import constants
 
 import win32com
-print(win32com.__gen_path__)
 
 DOCX_FILE_FORMAT = 12
 DOTX_FILE_FORMAT = 14
@@ -24,13 +23,13 @@ current_dir = pathlib.Path(__file__).parent.absolute()
 print(f'processing all [\'doc\', \'docm\', \'odt\', \'xls\', \'xlsm\', \'xlsb\', \'ods\', \'ppt\', \'pptm\', \'odp\'] files in \'{current_dir}\'')
 print('do NOT close any opening office application windows (minimize them instead)')
 
-#source_dir = str(current_dir) + '/source'
+#source = 'C:\\X1-Organisation'
+source = 'C:\\Users\\admin\\Desktop\\OfficeFileConversion\\source'
+issue_target_dir = 'C:\\ZZ\\IF'
+legacy_target_dir = 'C:\\ZZ\\BF'
 
-source_dir = sys.argv[1]
-issue_target_dir = 'X:\\ZZ\\IF'
-legacy_target_dir = 'X:\\ZZ\\BF'
+logfile = open('C:\\log.txt', 'a')
 
-logfile = open('X:\\ZZ\\log.txt', 'a')
 
 def get_magic(path):
     with open (path, 'rb') as myfile:
@@ -50,9 +49,7 @@ def handle_error(path):
     placeholder = open(path + '.txt', 'w')
     placeholder.write('file could not be converted')
     placeholder.close()
-    relpath = path.replace(str(source_dir), '')
-    newPath = issue_target_dir + relpath
-    copy_file(path, newPath)
+    copy_file(path, issue_target_dir + path[2:])
     os.remove(path)
     
     
@@ -74,22 +71,22 @@ def process_file(path):
     extension = pathlib.Path(path).suffix[1:].lower()
 
     path = str(path)
-    print(os.path.basename(path))
-    if extension in ['docxx']:
-        os.rename(path, path[:-1])
-        extension = 'docx'
-        path = path[:-1]
+    #print(os.path.basename(path))
+    #if extension in ['docxx']:
+    #    os.rename(path, path[:-1])
+    #    extension = 'docx'
+    #    path = path[:-1]
         
-    if extension in ['xlsxx']:
-        os.rename(path, path[:-1])
-        extension = 'xlsx'
-        path = path[:-1]
+    #if extension in ['xlsxx']:
+    #    os.rename(path, path[:-1])
+    #    extension = 'xlsx'
+    #    path = path[:-1]
         
     if extension in ['docx', 'doc', 'docm', 'dot', 'dotm', 'odt']:
         path, processing_needed = handle_fake_files(path, extension, 'docx')
         if not processing_needed:
             return 0
-        print(path)
+        #print(path)
         
         try:
             doc = word.Documents.Open(path, ConfirmConversions=False, Visible=False)
@@ -116,15 +113,15 @@ def process_file(path):
 
         word.ActiveDocument.SaveAs(new_path, ff)
         doc.Close(False)
-        copy_file(path, path.replace(source_dir, legacy_target_dir))
-        os.remove(path)
+        copy_file(path, legacy_target_dir + path[2:])
+        #os.remove(path)
         return 1
         
     elif extension in ['xlsx', 'xls', 'xlsm', 'xlsb', 'xlt', 'xltm', 'ods']:
         path, processing_needed = handle_fake_files(path, extension, 'xlsx')
         if not processing_needed:
             return 0
-        print(path)
+        #print(path)
         
         try:
             wb = excel.Workbooks.Open(path)
@@ -153,15 +150,15 @@ def process_file(path):
         
         wb.SaveAs(new_path, FileFormat=ff, ConflictResolution=2)
         wb.Close()
-        copy_file(path, path.replace(source_dir, legacy_target_dir))
-        os.remove(path)
+        copy_file(path, legacy_target_dir + path[2:])
+        #os.remove(path)
         return 1
         
     elif extension in ['pptx', 'ppt', 'pptm', 'pot', 'potm', 'pps', 'ppsm', 'odp']:
         path, processing_needed = handle_fake_files(path, extension, 'pptx')
         if not processing_needed:
             return 0
-        print(path)
+        #print(path)
         
         try:
             presentation = ppt.Presentations.Open(path, WithWindow=False)
@@ -191,8 +188,8 @@ def process_file(path):
             
         presentation.SaveAs(new_path, ff)
         presentation.Close()
-        copy_file(path, path.replace(source_dir, legacy_target_dir))
-        os.remove(path)
+        copy_file(path, legacy_target_dir + path[2:])
+        #os.remove(path)
         return 1
         
     return 0
@@ -206,10 +203,10 @@ excel.EnableEvents = False
 ppt = win32.gencache.EnsureDispatch('Powerpoint.Application')
 ppt.DisplayAlerts = constants.ppAlertsNone
 
-print(f'Processing folder: {source_dir}')
+print(f'Processing folder: {source}')
 
 count = 0
-for path in pathlib.Path(source_dir).rglob('*.*'):
+for path in pathlib.Path(source).rglob('*.*'):
     try:
         print (str(path))
         count += process_file(path)
@@ -221,8 +218,7 @@ for path in pathlib.Path(source_dir).rglob('*.*'):
             error_msg = f'ERROR: could not process \'{path}\'\n'
         print(error_msg)
         logfile.write(error_msg)
-        os.remove(path)
-        #copy_file(path, newPath)      
+        os.remove(path)  
        
 try:     
     word.Application.Quit()
