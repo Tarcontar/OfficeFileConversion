@@ -23,7 +23,6 @@ current_dir = pathlib.Path(__file__).parent.absolute()
 print(f'processing all [\'doc\', \'docm\', \'odt\', \'xls\', \'xlsm\', \'xlsb\', \'ods\', \'ppt\', \'pptm\', \'odp\'] files in \'{current_dir}\'')
 print('do NOT close any opening office application windows (minimize them instead)')
 
-#source = 'C:\\X1-Organisation'
 source = 'C:\\Users\\admin\\Desktop\\OfficeFileConversion\\source'
 issue_target_dir = 'C:\\ZZ\\IF'
 legacy_target_dir = 'C:\\ZZ\\BF'
@@ -89,7 +88,7 @@ def process_file(path):
         print(path)
         
         try:
-            doc = word.Documents.Open(path, ConfirmConversions=False, Visible=False, PasswordDocument='')
+            doc = word.Documents.Open(path, ConfirmConversions=False, Visible=False)
         except:
             handle_error(path)
             return 0
@@ -161,7 +160,7 @@ def process_file(path):
         print(path)
         
         try:
-            presentation = ppt.Presentations.Open(path, WithWindow=False, Password='')
+            presentation = ppt.Presentations.Open(path, WithWindow=False)
         except:
             handle_error(path)
             return 0
@@ -181,8 +180,6 @@ def process_file(path):
             new_path = path[:-1] + 'x'
         elif extension in ['ppsm']:
             new_path = path[:-1] + 'x'
-        elif extension in ['pptx']:
-            new_path = path
         else:
             new_path = path + 'x'
             
