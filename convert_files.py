@@ -86,10 +86,10 @@ def process_file(path):
         path, processing_needed = handle_fake_files(path, extension, 'docx')
         if not processing_needed:
             return 0
-        #print(path)
+        print(path)
         
         try:
-            doc = word.Documents.Open(path, ConfirmConversions=False, Visible=False)
+            doc = word.Documents.Open(path, ConfirmConversions=False, Visible=False, PasswordDocument='')
         except:
             handle_error(path)
             return 0
@@ -114,17 +114,17 @@ def process_file(path):
         word.ActiveDocument.SaveAs(new_path, ff)
         doc.Close(False)
         copy_file(path, legacy_target_dir + path[2:])
-        #os.remove(path)
+        os.remove(path)
         return 1
         
     elif extension in ['xlsx', 'xls', 'xlsm', 'xlsb', 'xlt', 'xltm', 'ods']:
         path, processing_needed = handle_fake_files(path, extension, 'xlsx')
         if not processing_needed:
             return 0
-        #print(path)
+        print(path)
         
         try:
-            wb = excel.Workbooks.Open(path)
+            wb = excel.Workbooks.Open(path, Password='')
             wb.Application.DisplayAlerts = False
         except:
             handle_error(path)
@@ -151,14 +151,14 @@ def process_file(path):
         wb.SaveAs(new_path, FileFormat=ff, ConflictResolution=2)
         wb.Close()
         copy_file(path, legacy_target_dir + path[2:])
-        #os.remove(path)
+        os.remove(path)
         return 1
         
     elif extension in ['pptx', 'ppt', 'pptm', 'pot', 'potm', 'pps', 'ppsm', 'odp']:
         path, processing_needed = handle_fake_files(path, extension, 'pptx')
         if not processing_needed:
             return 0
-        #print(path)
+        print(path)
         
         try:
             presentation = ppt.Presentations.Open(path, WithWindow=False)
@@ -189,7 +189,7 @@ def process_file(path):
         presentation.SaveAs(new_path, ff)
         presentation.Close()
         copy_file(path, legacy_target_dir + path[2:])
-        #os.remove(path)
+        os.remove(path)
         return 1
         
     return 0
