@@ -90,6 +90,8 @@ def process_file(path):
         
         try:
             doc = word.Documents.Open(path, ConfirmConversions=False, Visible=False)
+            doc.Application.EnableEvents = False
+            doc.Application.EnableEvents = False
         except:
             handle_error(path)
             return 0
@@ -126,6 +128,7 @@ def process_file(path):
         try:
             wb = excel.Workbooks.Open(path)
             wb.Application.DisplayAlerts = False
+            wb.Application.EnableEvents = False
         except:
             handle_error(path)
             return 0
@@ -162,6 +165,8 @@ def process_file(path):
         
         try:
             presentation = ppt.Presentations.Open(path, WithWindow=False)
+            presentation.Application.DisplayAlerts = False
+            presentation.Application.EnableEvents = False
         except:
             handle_error(path)
             return 0
