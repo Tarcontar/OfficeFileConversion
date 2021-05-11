@@ -1,11 +1,13 @@
 import os
+import sys
 import pathlib
 import binascii
 
 file_extensions = []
 
-source_dir = 'X:\\Arbeitsvorbereitung'
-#source_dir = pathlib.Path(__file__).parent.absolute()
+
+source_dir = sys.argv[1]
+print(f'Processing folder: {source_dir}')
 
 for path in pathlib.Path(str(source_dir)).rglob('*.*'):
     if os.path.isdir(path):

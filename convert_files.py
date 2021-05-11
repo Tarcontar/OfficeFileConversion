@@ -1,5 +1,6 @@
 import os
 import re
+import sys
 import pathlib
 import binascii
 import shutil
@@ -17,13 +18,15 @@ PPSX_FILE_FORMAT = 28
 XLSX_FILE_FORMAT = 51
 XLTX_FILE_FORMAT = 54
 
+X_FILE_MAGIC = '504b0304'
 
 current_dir = pathlib.Path(__file__).parent.absolute()
 print(f'processing all [\'doc\', \'docm\', \'odt\', \'xls\', \'xlsm\', \'xlsb\', \'ods\', \'ppt\', \'pptm\', \'odp\'] files in \'{current_dir}\'')
 print('do NOT close any opening office application windows (minimize them instead)')
 
 #source_dir = str(current_dir) + '/source'
-source_dir = 'X:\\Arbeitsvorbereitung'
+
+source_dir = sys.argv[1]
 issue_target_dir = 'X:\\ZZ\\IF'
 legacy_target_dir = 'X:\\ZZ\\BF'
 
@@ -52,10 +55,21 @@ def handle_error(path):
     copy_file(path, newPath)
     os.remove(path)
     
+    
+def handle_fake_files(path, extension, extension_filter):
+    if not extension in [extension_filter]:
+        return path, True
+    if X_FILE_MAGIC in get_magic(path):
+        return path, False
+    print('WARNING: fake file detected')
+    os.rename(path, path[:-1])
+    path = path[:-1]
+    return path, True
+    
 
 def process_file(path):
     if os.path.isdir(path):
-        return
+        return 0
 
     extension = pathlib.Path(path).suffix[1:].lower()
 
@@ -66,27 +80,28 @@ def process_file(path):
         extension = 'docx'
         path = path[:-1]
         
-    if extension in ['docx', 'doc', 'docm', 'dot', 'dotm', 'odt']:
-        ff = DOCX_FILE_FORMAT
-        if extension in ['docx']:
-            if '504b0304' in get_magic(path):
-                return
-            else:
-                print('WARNING: fake file detected')
-                os.rename(path, path[:-1])
-                path = path[:-1]
+    if extension in ['xlsxx']:
+        os.rename(path, path[:-1])
+        extension = 'xlsx'
+        path = path[:-1]
         
+    if extension in ['docx', 'doc', 'docm', 'dot', 'dotm', 'odt']:
+        path, processing_needed = handle_fake_files(path, extension, 'docx')
+        if not processing_needed:
+            return 0
         print(path)
         
         try:
             doc = word.Documents.Open(path, ConfirmConversions=False, Visible=False)
         except:
             handle_error(path)
-            return
+            return 0
         doc.Activate()
         
         if extension in ['dot', 'dotm']:
             ff = DOTX_FILE_FORMAT
+        else:
+            ff = DOCX_FILE_FORMAT
 
         if extension in ['odt']:
             new_path = path[:-3] + 'docx'
@@ -94,6 +109,8 @@ def process_file(path):
             new_path = path[:-1] + 'x'
         elif extension in ['dotm']:
             new_path = path[:-1] + 'x'
+        elif extension in ['docx']:
+            new_path = path
         else:
             new_path = path + 'x'
 
@@ -101,18 +118,12 @@ def process_file(path):
         doc.Close(False)
         copy_file(path, path.replace(source_dir, legacy_target_dir))
         os.remove(path)
-        count += 1
+        return 1
         
     elif extension in ['xlsx', 'xls', 'xlsm', 'xlsb', 'xlt', 'xltm', 'ods']:
-        ff = XLSX_FILE_FORMAT
-        if extension in ['xlsx']:
-            if '504b0304' in get_magic(path):
-                return
-            else:
-                print('fake file detected')
-                os.rename(path, path[:-1])
-                path = path[:-1]
-        
+        path, processing_needed = handle_fake_files(path, extension, 'xlsx')
+        if not processing_needed:
+            return 0
         print(path)
         
         try:
@@ -120,10 +131,12 @@ def process_file(path):
             wb.Application.DisplayAlerts = False
         except:
             handle_error(path)
-            return
+            return 0
             
         if extension in ['xlt', 'xltm']:
             ff = XLTX_FILE_FORMAT
+        else:
+            ff = XLSX_FILE_FORMAT
             
         if extension in ['ods']:
             new_path = path[:-3] + 'xlsx'
@@ -133,6 +146,8 @@ def process_file(path):
             new_path = path[:-1] + 'x'
         elif extension in ['xltm']:
             new_path = path[:-1] + 'x'
+        elif extension in ['xlsx']:
+            new_path = path
         else:
             new_path = path + 'x'
         
@@ -140,31 +155,26 @@ def process_file(path):
         wb.Close()
         copy_file(path, path.replace(source_dir, legacy_target_dir))
         os.remove(path)
-        count += 1
+        return 1
         
     elif extension in ['pptx', 'ppt', 'pptm', 'pot', 'potm', 'pps', 'ppsm', 'odp']:
-        ff = PPTX_FILE_FORMAT
-        if extension in ['pptx']:
-            if '504b0304' in get_magic(path):
-                return
-            else:
-                print('fake file detected')
-                os.rename(path, path[:-1])
-                path = path[:-1]
-        
+        path, processing_needed = handle_fake_files(path, extension, 'pptx')
+        if not processing_needed:
+            return 0
         print(path)
         
         try:
             presentation = ppt.Presentations.Open(path, WithWindow=False)
         except:
             handle_error(path)
-            return
+            return 0
             
         if extension in ['pot', 'potm']:
             ff = POTX_FILE_FORMAT
         elif extension in ['pps', 'ppsm']:
             ff = PPSX_FILE_FORMAT
-            
+        else:
+            ff = PPTX_FILE_FORMAT
         
         if extension in ['odp']:
             new_path = path[:-3] + 'pptx'
@@ -174,6 +184,8 @@ def process_file(path):
             new_path = path[:-1] + 'x'
         elif extension in ['ppsm']:
             new_path = path[:-1] + 'x'
+        elif extension in ['pptx']:
+            new_path = path
         else:
             new_path = path + 'x'
             
@@ -181,10 +193,11 @@ def process_file(path):
         presentation.Close()
         copy_file(path, path.replace(source_dir, legacy_target_dir))
         os.remove(path)
-        count += 1
+        return 1
+        
+    return 0
  
  
-count = 0
 word = win32.gencache.EnsureDispatch('Word.Application')
 word.DisplayAlerts = False
 excel = win32.gencache.EnsureDispatch('Excel.Application')
@@ -193,11 +206,13 @@ excel.EnableEvents = False
 ppt = win32.gencache.EnsureDispatch('Powerpoint.Application')
 ppt.DisplayAlerts = constants.ppAlertsNone
 
+print(f'Processing folder: {source_dir}')
 
+count = 0
 for path in pathlib.Path(source_dir).rglob('*.*'):
     try:
         print (str(path))
-        process_file(path)
+        count += process_file(path)
     except Exception as e:
         path = str(path)
         if hasattr(e, 'message'):
@@ -207,7 +222,7 @@ for path in pathlib.Path(source_dir).rglob('*.*'):
         print(error_msg)
         logfile.write(error_msg)
         os.remove(path)
-        copy_file(path, newPath)      
+        #copy_file(path, newPath)      
        
 try:     
     word.Application.Quit()
