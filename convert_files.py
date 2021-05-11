@@ -105,8 +105,6 @@ def process_file(path):
             new_path = path[:-1] + 'x'
         elif extension in ['dotm']:
             new_path = path[:-1] + 'x'
-        elif extension in ['docx']:
-            new_path = path
         else:
             new_path = path + 'x'
 
@@ -142,8 +140,6 @@ def process_file(path):
             new_path = path[:-1] + 'x'
         elif extension in ['xltm']:
             new_path = path[:-1] + 'x'
-        elif extension in ['xlsx']:
-            new_path = path
         else:
             new_path = path + 'x'
         
