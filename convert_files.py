@@ -89,7 +89,7 @@ def process_file(path):
         print(path)
         
         try:
-            doc = word.Documents.Open(path, ConfirmConversions=False, Visible=False, PasswordDocument='')
+            doc = word.Documents.Open(path, ConfirmConversions=False, Visible=False, PasswordDocument="")
         except:
             handle_error(path)
             return 0
