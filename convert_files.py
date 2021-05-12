@@ -79,19 +79,8 @@ def process_file(path):
         return 0
 
     extension = pathlib.Path(path).suffix[1:].lower()
-
     path = str(path)
-    #print(os.path.basename(path))
-    #if extension in ['docxx']:
-    #    os.rename(path, path[:-1])
-    #    extension = 'docx'
-    #    path = path[:-1]
-        
-    #if extension in ['xlsxx']:
-    #    os.rename(path, path[:-1])
-    #    extension = 'xlsx'
-    #    path = path[:-1]
-    
+
     if os.path.basename(path).startswith('~$'): 
         print(path)
         os.remove(path)
@@ -204,7 +193,7 @@ def process_file(path):
     return 0
     
  
-def main():
+if __name__ == "__main__":
     print(f'Processing folder: {source}')
     file_count = 0
     for path in pathlib.Path(source).rglob('*.*'):
@@ -238,7 +227,3 @@ def main():
     logfile.close()
     print(f'converted {file_count} files')
     input('Press Enter to continue...')
-
-
-if __name__ == "__main__":
-    main()
