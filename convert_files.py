@@ -97,11 +97,11 @@ def process_file(path):
         
         try:
             doc = word.Documents.Open(path, ConfirmConversions=False, Visible=False)
+            doc.Activate()
         except Exception as e:
             print(e)
             handle_error(path)
             return 0
-        doc.Activate()
         
         if extension in ['dot', 'dotm']:
             ff = DOTX_FILE_FORMAT
