@@ -61,7 +61,7 @@ def handle_error(path):
     
     
 def handle_fake_files(path, extension, extensions_filter):
-    if not extension in extension_filter:
+    if not extension in extensions_filter:
         return path, True
     if ZIP_FILE_MAGIC in get_magic(path):
         return path, False
