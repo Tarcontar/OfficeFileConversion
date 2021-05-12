@@ -97,7 +97,8 @@ def process_file(path):
         
         try:
             doc = word.Documents.Open(path, ConfirmConversions=False, Visible=False)
-        except:
+        except Exception as e:
+            print(e)
             handle_error(path)
             return 0
         doc.Activate()
@@ -131,7 +132,8 @@ def process_file(path):
         try:
             wb = excel.Workbooks.Open(path, Password='')
             wb.Application.DisplayAlerts = False
-        except:
+        except Exception as e:
+            print(e)
             handle_error(path)
             return 0
             
@@ -165,7 +167,8 @@ def process_file(path):
         
         try:
             presentation = ppt.Presentations.Open(path, WithWindow=False)
-        except:
+        except Exception as e:
+            print(e)
             handle_error(path)
             return 0
             
