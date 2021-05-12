@@ -9,7 +9,7 @@ from win32com.client import constants
 import win32com
 from multiprocessing import Process
 
-source = 'X:\\After-sales'
+source = 'X:\\Anfragepakete'
 issue_target_dir = 'X:\\ZZ\\IF'
 legacy_target_dir = 'X:\\ZZ\\BF'
 logfile = open('X:\\ZZ\\log.txt', 'a')
@@ -121,9 +121,10 @@ def process_file(path):
     extension = pathlib.Path(path).suffix[1:].lower()
     path = str(path)
 
-    print (path)
+    #print (path)
     #print (os.path.basename(path))
-    if os.path.basename(path).startswith('~$'): 
+    if os.path.basename(path).startswith('~$'):
+        print (path)
         os.remove(path)
         return 0
         
@@ -132,6 +133,7 @@ def process_file(path):
         if not processing_needed:
             return 0
         
+        print (path)
         if extension in ['dotx', 'dot', 'dotm']:
             format = DOTX_FILE_FORMAT
         else:
@@ -152,6 +154,7 @@ def process_file(path):
         if not processing_needed:
             return 0
             
+        print (path)
         if extension in ['xltx', 'xlt', 'xltm']:
             format = XLTX_FILE_FORMAT
         else:
@@ -171,7 +174,8 @@ def process_file(path):
         path, processing_needed = handle_fake_files(path, extension, ['pptx', 'potx', 'ppsx'])
         if not processing_needed:
             return 0
-            
+        
+        print (path)
         if extension in ['potx', 'pot', 'potm']:
             format = POTX_FILE_FORMAT
         elif extension in ['ppsx', 'pps', 'ppsm']:
@@ -190,6 +194,7 @@ def process_file(path):
         return 1
         
     elif extension in ['msg', 'exe', 'msi', 'bat', 'lnk', 'reg', 'pol', 'ps1', 'psm1', 'psd1', 'ps1xml', 'pssc', 'psrc', 'cdxml']:
+        print (path)
         placeholder = open(path + '.txt', 'w')
         placeholder.write('file might be malicious and was moved to a backup location, please contact your IT')
         placeholder.close()

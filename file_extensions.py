@@ -13,7 +13,7 @@ print(f'Processing folder: {source_dir}')
 for path in pathlib.Path(str(source_dir)).rglob('*.*'):
     if os.path.isdir(path):
         continue
-    extension = pathlib.Path(path).suffix
+    extension = pathlib.Path(path).suffix[1:].lower()
     if not extension in file_extensions:
         file_extensions.append(extension)
         
