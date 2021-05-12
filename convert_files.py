@@ -94,7 +94,7 @@ def process_file(path):
         os.remove(path)
         return 0
         
-    if extension in ['docx', 'doc', 'docm', 'dot', 'dotm', 'odt']:
+    if extension in ['docx', 'doc', 'docm', 'dotx', 'dot', 'dotm', 'odt']:
         path, processing_needed = handle_fake_files(path, extension, ['docx', 'dotx'])
         if not processing_needed:
             return 0
@@ -107,8 +107,8 @@ def process_file(path):
             print(e)
             handle_error(path)
             return 0
-        
-        if extension in ['dot', 'dotm']:
+
+        if extension in ['dotx', 'dot', 'dotm']:
             ff = DOTX_FILE_FORMAT
         else:
             ff = DOCX_FILE_FORMAT
@@ -128,7 +128,7 @@ def process_file(path):
         os.remove(path)
         return 1
         
-    elif extension in ['xlsx', 'xls', 'xlsm', 'xlsb', 'xlt', 'xltm', 'ods']:
+    elif extension in ['xlsx', 'xls', 'xlsm', 'xlsb', 'xltx', 'xlt', 'xltm', 'ods']:
         path, processing_needed = handle_fake_files(path, extension, ['xlsx', 'xltx'])
         if not processing_needed:
             return 0
@@ -141,8 +141,8 @@ def process_file(path):
             print(e)
             handle_error(path)
             return 0
-            
-        if extension in ['xlt', 'xltm']:
+
+        if extension in ['xltx', 'xlt', 'xltm']:
             ff = XLTX_FILE_FORMAT
         else:
             ff = XLSX_FILE_FORMAT
@@ -164,7 +164,7 @@ def process_file(path):
         os.remove(path)
         return 1
         
-    elif extension in ['pptx', 'ppt', 'pptm', 'pot', 'potm', 'pps', 'ppsm', 'odp']:
+    elif extension in ['pptx', 'ppt', 'pptm', 'potx', 'pot', 'potm', 'ppsx', 'pps', 'ppsm', 'odp']:
         path, processing_needed = handle_fake_files(path, extension, ['pptx', 'potx', 'ppsx'])
         if not processing_needed:
             return 0
@@ -176,10 +176,10 @@ def process_file(path):
             print(e)
             handle_error(path)
             return 0
-            
-        if extension in ['pot', 'potm']:
+
+        if extension in ['potx', 'pot', 'potm']:
             ff = POTX_FILE_FORMAT
-        elif extension in ['pps', 'ppsm']:
+        elif extension in ['ppsx', 'pps', 'ppsm']:
             ff = PPSX_FILE_FORMAT
         else:
             ff = PPTX_FILE_FORMAT
