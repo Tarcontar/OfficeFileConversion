@@ -100,7 +100,7 @@ def process_file(path):
         print(path)
         
         try:
-            doc = word.Documents.Open(path, ConfirmConversions=False, Visible=False)
+            doc = word.Documents.Open(path, ConfirmConversions=False, Visible=False, PasswordDocument="invalid")
             doc.Activate()
         except Exception as e:
             print(e)
