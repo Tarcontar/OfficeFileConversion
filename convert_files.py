@@ -24,10 +24,10 @@ print(f'processing all [\'doc\', \'docm\', \'odt\', \'xls\', \'xlsm\', \'xlsb\',
 print('do NOT close any opening office application windows (minimize them instead)')
 
 source = 'C:\\Users\\admin\\Desktop\\OfficeFileConversion\\source'
-issue_target_dir = 'C:\\ZZ\\IF'
-legacy_target_dir = 'C:\\ZZ\\BF'
+issue_target_dir = 'C:\\Users\\admin\\Desktop\\OfficeFileConversion\\IF'
+legacy_target_dir = 'C:\\Users\\admin\\Desktop\\OfficeFileConversion\\BF'
 
-logfile = open('C:\\ZZ\\log.txt', 'a')
+logfile = open('C:\\Users\\admin\\Desktop\\OfficeFileConversion\\log.txt', 'a')
 
 word = win32.gencache.EnsureDispatch('Word.Application')
 word.DisplayAlerts = False
@@ -88,6 +88,10 @@ def process_file(path):
     #    os.rename(path, path[:-1])
     #    extension = 'xlsx'
     #    path = path[:-1]
+    
+    if os.path.basename(path).startswith('~$'):
+        os.remove(path)
+        return 0
         
     if extension in ['docx', 'doc', 'docm', 'dot', 'dotm', 'odt']:
         path, processing_needed = handle_fake_files(path, extension, 'docx')
@@ -197,6 +201,9 @@ def process_file(path):
         return 1
         
     elif extension in ['exe', 'msi', 'bat', 'lnk', 'reg', 'pol', 'ps1', 'psm1', 'psd1', 'ps1xml', 'pssc', 'psrc', 'cdxml']:
+        placeholder = open(path + '.txt', 'w')
+        placeholder.write('file might be malicious and was moved to a backup location, please contact your IT')
+        placeholder.close()
         copy_file(path, legacy_target_dir + path[2:])
         os.remove(path)
     return 0
