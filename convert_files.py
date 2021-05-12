@@ -17,10 +17,10 @@ PPSX_FILE_FORMAT = 28
 XLSX_FILE_FORMAT = 51
 XLTX_FILE_FORMAT = 54
 
-X_FILE_MAGIC = '504b0304'
+ZIP_FILE_MAGIC = '504b0304'
 
 current_dir = pathlib.Path(__file__).parent.absolute()
-print(f'processing all [\'doc\', \'docm\', \'odt\', \'xls\', \'xlsm\', \'xlsb\', \'ods\', \'ppt\', \'pptm\', \'odp\'] files in \'{current_dir}\'')
+print(f'processing all [docx, doc, docm, dot, dotm, odt, xlsx, xls, xlsm, xlsb, xlt, xltm, ods, pptx, ppt, pptm, pot, potm, pps, ppsm, odp] files in \'{current_dir}\'')
 print('do NOT close any opening office application windows (minimize them instead)')
 
 source = 'C:\\Users\\admin\\Desktop\\OfficeFileConversion\\source'
@@ -63,7 +63,7 @@ def handle_error(path):
 def handle_fake_files(path, extension, extension_filter):
     if not extension in [extension_filter]:
         return path, True
-    if X_FILE_MAGIC in get_magic(path):
+    if ZIP_FILE_MAGIC in get_magic(path):
         return path, False
     print('WARNING: fake file detected')
     os.rename(path, path[:-1])
