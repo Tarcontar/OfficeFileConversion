@@ -5,6 +5,7 @@ import binascii
 
 file_extensions = []
 
+bad_files = ['doc', 'docm', 'dot', 'dotm', 'odt', 'xls', 'xlsm', 'xlsb', 'xlt', 'xltm', 'ods', 'ppt', 'pptm', 'pot', 'potm', 'pps', 'ppsm', 'odp']
 
 source_dir = sys.argv[1]
 print(f'Processing folder: {source_dir}')
@@ -23,5 +24,9 @@ for path in pathlib.Path(str(source_dir)).rglob('*.*'):
         
 file_extensions.sort() 
 print(file_extensions)
+
+for bad_file in bad_files:
+    if bad_file in file_extensions:
+        print(f'ERROR: found {bad_file} extension!')
 
 input("Press Enter to continue...")

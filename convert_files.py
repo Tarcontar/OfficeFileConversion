@@ -6,8 +6,8 @@ import binascii
 import shutil
 import win32com.client as win32
 from win32com.client import constants
-
 import win32com
+from concurrent.futures import ProcessPoolExecutor
 
 DOCX_FILE_FORMAT = 12
 DOTX_FILE_FORMAT = 14
@@ -28,6 +28,14 @@ issue_target_dir = 'C:\\ZZ\\IF'
 legacy_target_dir = 'C:\\ZZ\\BF'
 
 logfile = open('C:\\log.txt', 'a')
+
+word = win32.gencache.EnsureDispatch('Word.Application')
+word.DisplayAlerts = False
+excel = win32.gencache.EnsureDispatch('Excel.Application')
+excel.DisplayAlerts = False
+excel.EnableEvents = False
+ppt = win32.gencache.EnsureDispatch('Powerpoint.Application')
+ppt.DisplayAlerts = constants.ppAlertsNone
 
 
 def get_magic(path):
@@ -185,21 +193,13 @@ def process_file(path):
         os.remove(path)
         return 1
         
+    elif extension in ['exe', 'msi', 'bat', 'lnk', 'reg', 'pol', 'ps1', 'psm1', 'psd1', 'ps1xml', 'pssc', 'psrc', 'cdxml']:
+        copy_file(path, legacy_target_dir + path[2:])
+        os.remove(path)
     return 0
- 
- 
-word = win32.gencache.EnsureDispatch('Word.Application')
-word.DisplayAlerts = False
-excel = win32.gencache.EnsureDispatch('Excel.Application')
-excel.DisplayAlerts = False
-excel.EnableEvents = False
-ppt = win32.gencache.EnsureDispatch('Powerpoint.Application')
-ppt.DisplayAlerts = constants.ppAlertsNone
-
-print(f'Processing folder: {source}')
-
-count = 0
-for path in pathlib.Path(source).rglob('*.*'):
+    
+    
+def process(path):
     try:
         print (str(path))
         count += process_file(path)
@@ -211,24 +211,36 @@ for path in pathlib.Path(source).rglob('*.*'):
             error_msg = f'ERROR: could not process \'{path}\'\n'
         print(error_msg)
         logfile.write(error_msg)
-        os.remove(path)  
-       
-try:     
-    word.Application.Quit()
-except:
-    pass
-    
-try:     
-    excel.Application.Quit()
-except:
-    pass
-    
-try:     
-    ppt.Quit()
-except:
-    pass
+        os.remove(path)
+ 
+ 
+def main():
+    print(f'Processing folder: {source}')
 
-logfile.close()
-print(f'converted {count} files')
-input('Press Enter to continue...')
+    count = 0
+    with ProcessPoolExecutor() as executor:
+        for path in pathlib.Path(source).rglob('*.*'):
+            executor.submit(process, path)
+           
+    try:     
+        word.Application.Quit()
+    except:
+        pass
+        
+    try:     
+        excel.Application.Quit()
+    except:
+        pass
+        
+    try:     
+        ppt.Quit()
+    except:
+        pass
 
+    logfile.close()
+    print(f'converted {count} files')
+    input('Press Enter to continue...')
+
+
+if __name__ == "__main__":
+    main()
