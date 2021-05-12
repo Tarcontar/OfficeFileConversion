@@ -170,7 +170,7 @@ def process_file(path):
         print(path)
         
         try:
-            presentation = ppt.Presentations.Open(path, WithWindow=False)
+            presentation = ppt.Presentations.Open(path + ':invalid::', WithWindow=False)
         except Exception as e:
             print(e)
             handle_error(path)
