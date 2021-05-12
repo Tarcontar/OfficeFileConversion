@@ -27,7 +27,7 @@ source = 'C:\\Users\\admin\\Desktop\\OfficeFileConversion\\source'
 issue_target_dir = 'C:\\ZZ\\IF'
 legacy_target_dir = 'C:\\ZZ\\BF'
 
-logfile = open('C:\\log.txt', 'a')
+logfile = open('C:\\ZZ\\log.txt', 'a')
 
 word = win32.gencache.EnsureDispatch('Word.Application')
 word.DisplayAlerts = False
@@ -201,31 +201,24 @@ def process_file(path):
         os.remove(path)
     return 0
     
-    
-def process(path):
-    try:
-        print (str(path))
-        count += process_file(path)
-    except Exception as e:
-        path = str(path)
-        if hasattr(e, 'message'):
-            error_msg = f'ERROR: could not process \'{path}\' {e.message}\n'
-        else:
-            error_msg = f'ERROR: could not process \'{path}\'\n'
-        print(error_msg)
-        logfile.write(error_msg)
-        os.remove(path)
- 
  
 def main():
     print(f'Processing folder: {source}')
-
-    count = 0
-    #with ProcessPoolExecutor() as executor:
+    file_count = 0
     for path in pathlib.Path(source).rglob('*.*'):
-        process(path)
-    #executor.submit(process, path)
-           
+        try:
+            print (str(path))
+            file_count += process_file(path)
+        except Exception as e:
+            path = str(path)
+            if hasattr(e, 'message'):
+                error_msg = f'ERROR: could not process \'{path}\' {e.message}\n'
+            else:
+                error_msg = f'ERROR: could not process \'{path}\'\n'
+            print(error_msg)
+            logfile.write(error_msg)
+            os.remove(path)
+
     try:     
         word.Application.Quit()
     except:
@@ -242,7 +235,7 @@ def main():
         pass
 
     logfile.close()
-    print(f'converted {count} files')
+    print(f'converted {file_count} files')
     input('Press Enter to continue...')
 
 
