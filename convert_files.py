@@ -7,14 +7,12 @@ import shutil
 import win32com.client as win32
 from win32com.client import constants
 import win32com
-import multiprocessing
+from multiprocessing import Process
 
-
-source = 'C:\\Users\\admin\\Desktop\\OfficeFileConversion\\source'
-issue_target_dir = 'C:\\Users\\admin\\Desktop\\OfficeFileConversion\\IF'
-legacy_target_dir = 'C:\\Users\\admin\\Desktop\\OfficeFileConversion\\BF'
-
-logfile = open('C:\\Users\\admin\\Desktop\\OfficeFileConversion\\log.txt', 'a')
+source = 'X:\\After-sales'
+issue_target_dir = 'X:\\ZZ\\IF'
+legacy_target_dir = 'X:\\ZZ\\BF'
+logfile = open('X:\\ZZ\\log.txt', 'a')
 
 
 DOCX_FILE_FORMAT = 12
@@ -28,7 +26,7 @@ XLTX_FILE_FORMAT = 54
 ZIP_FILE_MAGIC = '504b0304'
 
 current_dir = pathlib.Path(__file__).parent.absolute()
-print(f'processing all [docx, doc, docm, dot, dotm, odt, xlsx, xls, xlsm, xlsb, xlt, xltm, ods, pptx, ppt, pptm, pot, potm, pps, ppsm, odp] files in \'{current_dir}\'')
+print(f'processing all [docx, doc, docm, dot, dotm, odt, xlsx, xls, xlsm, xlsb, xlt, xltm, ods, pptx, ppt, pptm, pot, potm, pps, ppsm, odp] files in \'{source}\'')
 print('do NOT close any opening office application windows (minimize them instead)')
 
 
@@ -74,6 +72,48 @@ def handle_fake_files(path, extension, extensions_filter):
     return path, True
     
 
+def process_word(source, target, format, target_dir):
+    try:
+        doc = word.Documents.Open(source, ConfirmConversions=False, Visible=False, PasswordDocument="invalid")
+        doc.Activate()
+        word.ActiveDocument.SaveAs(target, format)
+        doc.Close(False)
+        #copy_file(source, target_dir + source[2:])
+        os.remove(source)
+    except Exception as e:
+        print(e)
+        handle_error(source)
+        return False
+    return True
+    
+    
+def process_excel(source, target, format, target_dir):
+    try:
+        wb = excel.Workbooks.Open(source, Password='')
+        wb.Application.DisplayAlerts = False
+        wb.SaveAs(target, FileFormat=format, ConflictResolution=2)
+        wb.Close()
+        #copy_file(source, target_dir + source[2:])
+        os.remove(source)
+    except Exception as e:
+        print(e)
+        handle_error(source)
+        return False
+    return True
+    
+    
+def process_powerpoint(source, target, format, target_dir):
+    try:
+        presentation = ppt.Presentations.Open(source + ':::', WithWindow=False)
+        presentation.SaveAs(target, format)
+        presentation.Close()
+        #copy_file(source, target_dir + source[2:])
+        os.remove(source)
+    except Exception as e:
+        print(e)
+        handle_error(source)
+
+
 def process_file(path):
     if os.path.isdir(path):
         return 0
@@ -81,8 +121,9 @@ def process_file(path):
     extension = pathlib.Path(path).suffix[1:].lower()
     path = str(path)
 
+    print (path)
+    #print (os.path.basename(path))
     if os.path.basename(path).startswith('~$'): 
-        print(path)
         os.remove(path)
         return 0
         
@@ -90,20 +131,11 @@ def process_file(path):
         path, processing_needed = handle_fake_files(path, extension, ['docx', 'dotx'])
         if not processing_needed:
             return 0
-        print(path)
         
-        try:
-            doc = word.Documents.Open(path, ConfirmConversions=False, Visible=False, PasswordDocument="invalid")
-            doc.Activate()
-        except Exception as e:
-            print(e)
-            handle_error(path)
-            return 0
-
         if extension in ['dotx', 'dot', 'dotm']:
-            ff = DOTX_FILE_FORMAT
+            format = DOTX_FILE_FORMAT
         else:
-            ff = DOCX_FILE_FORMAT
+            format = DOCX_FILE_FORMAT
 
         if extension in ['odt']:
             new_path = path[:-3] + 'docx'
@@ -111,31 +143,19 @@ def process_file(path):
             new_path = path[:-1] + 'x'
         else:
             new_path = path + 'x'
-
-        word.ActiveDocument.SaveAs(new_path, ff)
-        doc.Close(False)
-        copy_file(path, legacy_target_dir + path[2:])
-        os.remove(path)
+        
+        process_word(path, new_path, format, legacy_target_dir)
         return 1
         
     elif extension in ['xlsx', 'xls', 'xlsm', 'xlsb', 'xltx', 'xlt', 'xltm', 'ods']:
         path, processing_needed = handle_fake_files(path, extension, ['xlsx', 'xltx'])
         if not processing_needed:
             return 0
-        print(path)
-        
-        try:
-            wb = excel.Workbooks.Open(path, Password='')
-            wb.Application.DisplayAlerts = False
-        except Exception as e:
-            print(e)
-            handle_error(path)
-            return 0
-
+            
         if extension in ['xltx', 'xlt', 'xltm']:
-            ff = XLTX_FILE_FORMAT
+            format = XLTX_FILE_FORMAT
         else:
-            ff = XLSX_FILE_FORMAT
+            format = XLSX_FILE_FORMAT
             
         if extension in ['ods']:
             new_path = path[:-3] + 'xlsx'
@@ -144,31 +164,20 @@ def process_file(path):
         else:
             new_path = path + 'x'
         
-        wb.SaveAs(new_path, FileFormat=ff, ConflictResolution=2)
-        wb.Close()
-        copy_file(path, legacy_target_dir + path[2:])
-        os.remove(path)
+        process_excel(path, new_path, format, legacy_target_dir)
         return 1
-        
+
     elif extension in ['pptx', 'ppt', 'pptm', 'potx', 'pot', 'potm', 'ppsx', 'pps', 'ppsm', 'odp']:
         path, processing_needed = handle_fake_files(path, extension, ['pptx', 'potx', 'ppsx'])
         if not processing_needed:
             return 0
-        print(path)
-        
-        try:
-            presentation = ppt.Presentations.Open(path + ':::', WithWindow=False)
-        except Exception as e:
-            print(e)
-            handle_error(path)
-            return 0
-
+            
         if extension in ['potx', 'pot', 'potm']:
-            ff = POTX_FILE_FORMAT
+            format = POTX_FILE_FORMAT
         elif extension in ['ppsx', 'pps', 'ppsm']:
-            ff = PPSX_FILE_FORMAT
+            format = PPSX_FILE_FORMAT
         else:
-            ff = PPTX_FILE_FORMAT
+            format = PPTX_FILE_FORMAT
         
         if extension in ['odp']:
             new_path = path[:-3] + 'pptx'
@@ -176,19 +185,15 @@ def process_file(path):
             new_path = path[:-1] + 'x'
         else:
             new_path = path + 'x'
-            
-        presentation.SaveAs(new_path, ff)
-        presentation.Close()
-        copy_file(path, legacy_target_dir + path[2:])
-        os.remove(path)
+
+        process_powerpoint(path, new_path, format, legacy_target_dir)
         return 1
         
-    elif extension in ['exe', 'msi', 'bat', 'lnk', 'reg', 'pol', 'ps1', 'psm1', 'psd1', 'ps1xml', 'pssc', 'psrc', 'cdxml']:
-        print(path)
+    elif extension in ['msg', 'exe', 'msi', 'bat', 'lnk', 'reg', 'pol', 'ps1', 'psm1', 'psd1', 'ps1xml', 'pssc', 'psrc', 'cdxml']:
         placeholder = open(path + '.txt', 'w')
         placeholder.write('file might be malicious and was moved to a backup location, please contact your IT')
         placeholder.close()
-        copy_file(path, legacy_target_dir + path[2:])
+        copy_file(path, issue_target_dir + path[2:])
         os.remove(path)
     return 0
     
@@ -207,7 +212,10 @@ if __name__ == "__main__":
                 error_msg = f'ERROR: could not process \'{path}\'\n'
             print(error_msg)
             logfile.write(error_msg)
-            os.remove(path)
+            try:
+                os.remove(path)
+            except:
+                pass
 
     try:     
         word.Application.Quit()
