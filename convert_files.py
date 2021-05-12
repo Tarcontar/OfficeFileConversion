@@ -60,8 +60,8 @@ def handle_error(path):
     os.remove(path)
     
     
-def handle_fake_files(path, extension, extension_filter):
-    if not extension in [extension_filter]:
+def handle_fake_files(path, extension, extensions_filter):
+    if not extension in extension_filter:
         return path, True
     if ZIP_FILE_MAGIC in get_magic(path):
         return path, False
@@ -94,7 +94,7 @@ def process_file(path):
         return 0
         
     if extension in ['docx', 'doc', 'docm', 'dot', 'dotm', 'odt']:
-        path, processing_needed = handle_fake_files(path, extension, 'docx')
+        path, processing_needed = handle_fake_files(path, extension, ['docx', 'dotx'])
         if not processing_needed:
             return 0
         print(path)
@@ -128,7 +128,7 @@ def process_file(path):
         return 1
         
     elif extension in ['xlsx', 'xls', 'xlsm', 'xlsb', 'xlt', 'xltm', 'ods']:
-        path, processing_needed = handle_fake_files(path, extension, 'xlsx')
+        path, processing_needed = handle_fake_files(path, extension, ['xlsx', 'xltx'])
         if not processing_needed:
             return 0
         print(path)
@@ -164,7 +164,7 @@ def process_file(path):
         return 1
         
     elif extension in ['pptx', 'ppt', 'pptm', 'pot', 'potm', 'pps', 'ppsm', 'odp']:
-        path, processing_needed = handle_fake_files(path, extension, 'pptx')
+        path, processing_needed = handle_fake_files(path, extension, ['pptx', 'potx', 'ppsx'])
         if not processing_needed:
             return 0
         print(path)
