@@ -89,7 +89,8 @@ def process_file(path):
     #    extension = 'xlsx'
     #    path = path[:-1]
     
-    if os.path.basename(path).startswith('~$'):
+    if os.path.basename(path).startswith('~$'): 
+        print(path)
         os.remove(path)
         return 0
         
@@ -201,6 +202,7 @@ def process_file(path):
         return 1
         
     elif extension in ['exe', 'msi', 'bat', 'lnk', 'reg', 'pol', 'ps1', 'psm1', 'psd1', 'ps1xml', 'pssc', 'psrc', 'cdxml']:
+        print(path)
         placeholder = open(path + '.txt', 'w')
         placeholder.write('file might be malicious and was moved to a backup location, please contact your IT')
         placeholder.close()
@@ -214,7 +216,6 @@ def main():
     file_count = 0
     for path in pathlib.Path(source).rglob('*.*'):
         try:
-            print (str(path))
             file_count += process_file(path)
         except Exception as e:
             path = str(path)
