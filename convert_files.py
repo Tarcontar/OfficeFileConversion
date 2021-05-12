@@ -7,7 +7,7 @@ import shutil
 import win32com.client as win32
 from win32com.client import constants
 import win32com
-from concurrent.futures import ProcessPoolExecutor
+import multiprocessing
 
 DOCX_FILE_FORMAT = 12
 DOTX_FILE_FORMAT = 14
