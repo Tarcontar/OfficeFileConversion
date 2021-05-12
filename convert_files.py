@@ -218,9 +218,10 @@ def main():
     print(f'Processing folder: {source}')
 
     count = 0
-    with ProcessPoolExecutor() as executor:
-        for path in pathlib.Path(source).rglob('*.*'):
-            executor.submit(process, path)
+    #with ProcessPoolExecutor() as executor:
+    for path in pathlib.Path(source).rglob('*.*'):
+        process(path)
+    #executor.submit(process, path)
            
     try:     
         word.Application.Quit()
