@@ -9,6 +9,14 @@ from win32com.client import constants
 import win32com
 import multiprocessing
 
+
+source = 'C:\\Users\\admin\\Desktop\\OfficeFileConversion\\source'
+issue_target_dir = 'C:\\Users\\admin\\Desktop\\OfficeFileConversion\\IF'
+legacy_target_dir = 'C:\\Users\\admin\\Desktop\\OfficeFileConversion\\BF'
+
+logfile = open('C:\\Users\\admin\\Desktop\\OfficeFileConversion\\log.txt', 'a')
+
+
 DOCX_FILE_FORMAT = 12
 DOTX_FILE_FORMAT = 14
 PPTX_FILE_FORMAT = 24
@@ -23,11 +31,6 @@ current_dir = pathlib.Path(__file__).parent.absolute()
 print(f'processing all [docx, doc, docm, dot, dotm, odt, xlsx, xls, xlsm, xlsb, xlt, xltm, ods, pptx, ppt, pptm, pot, potm, pps, ppsm, odp] files in \'{current_dir}\'')
 print('do NOT close any opening office application windows (minimize them instead)')
 
-source = 'C:\\Users\\admin\\Desktop\\OfficeFileConversion\\source'
-issue_target_dir = 'C:\\Users\\admin\\Desktop\\OfficeFileConversion\\IF'
-legacy_target_dir = 'C:\\Users\\admin\\Desktop\\OfficeFileConversion\\BF'
-
-logfile = open('C:\\Users\\admin\\Desktop\\OfficeFileConversion\\log.txt', 'a')
 
 word = win32.gencache.EnsureDispatch('Word.Application')
 word.DisplayAlerts = False
@@ -115,9 +118,7 @@ def process_file(path):
 
         if extension in ['odt']:
             new_path = path[:-3] + 'docx'
-        elif extension in ['docm']:
-            new_path = path[:-1] + 'x'
-        elif extension in ['dotm']:
+        elif extension in ['docm', 'dotm']:
             new_path = path[:-1] + 'x'
         else:
             new_path = path + 'x'
@@ -149,11 +150,7 @@ def process_file(path):
             
         if extension in ['ods']:
             new_path = path[:-3] + 'xlsx'
-        elif extension in ['xlsm']:
-            new_path = path[:-1] + 'x'
-        elif extension in ['xlsb']:
-            new_path = path[:-1] + 'x'
-        elif extension in ['xltm']:
+        elif extension in ['xlsm', 'xlsb', 'xltm']:
             new_path = path[:-1] + 'x'
         else:
             new_path = path + 'x'
@@ -186,11 +183,7 @@ def process_file(path):
         
         if extension in ['odp']:
             new_path = path[:-3] + 'pptx'
-        elif extension in ['pptm']:
-            new_path = path[:-1] + 'x'
-        elif extension in ['potm']:
-            new_path = path[:-1] + 'x'
-        elif extension in ['ppsm']:
+        elif extension in ['pptm', 'potm', 'ppsm']:
             new_path = path[:-1] + 'x'
         else:
             new_path = path + 'x'
