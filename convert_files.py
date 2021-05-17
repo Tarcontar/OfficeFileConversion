@@ -9,10 +9,15 @@ from win32com.client import constants
 import win32com
 from multiprocessing import Process
 
-source = sys.argv[1]
-issue_target_dir = 'X:\\ZZ\\IF'
-legacy_target_dir = 'X:\\ZZ\\BF'
-logfile = open('X:\\ZZ\\log.txt', 'a')
+#source = sys.argv[1]
+#issue_target_dir = 'X:\\ZZ\\IF'
+#legacy_target_dir = 'X:\\ZZ\\BF'
+#logfile = open('X:\\ZZ\\log.txt', 'a')
+
+source = 'C:\\Users\\admin\\Desktop\\OfficeFileConversion - Kopie\\source'
+issue_target_dir = 'C:\\IF'
+legacy_target_dir = 'C:\\BF'
+logfile = open('C:\\log.txt', 'a')
 
 DOCX_FILE_FORMAT = 12
 DOTX_FILE_FORMAT = 14
@@ -21,6 +26,7 @@ POTX_FILE_FORMAT = 26
 PPSX_FILE_FORMAT = 28
 XLSX_FILE_FORMAT = 51
 XLTX_FILE_FORMAT = 54
+ACCDB_FILE_FORMAT = 54
 
 ZIP_FILE_MAGIC = '504b0304'
 
@@ -56,6 +62,12 @@ except AttributeError:
     shutil.rmtree(python_temp)
     ppt = win32.gencache.EnsureDispatch('Powerpoint.Application')
     ppt.DisplayAlerts = constants.ppAlertsNone
+    
+try:
+    access = win32.gencache.EnsureDispatch('Access.Application')
+except AttributeError:
+    shutil.rmtree(python_temp)
+    access = win32.gencache.EnsureDispatch('Access.Application')
 
 
 
@@ -109,8 +121,9 @@ def process_word(source, target, format, target_dir):
     
 def process_excel(source, target, format, target_dir):
     try:
-        wb = excel.Workbooks.Open(source, Password='')
+        wb = excel.Workbooks.Open(source, UpdateLinks=False, Password='')
         wb.Application.DisplayAlerts = False
+        wb.Application.EnableEvents = False
         wb.SaveAs(target, FileFormat=format, ConflictResolution=2)
         wb.Close()
         #copy_file(source, target_dir + source[2:])
@@ -132,28 +145,41 @@ def process_powerpoint(source, target, format, target_dir):
     except Exception as e:
         print(e)
         handle_error(source)
+        
+        
+def process_access(source, target, format, target_dir):
+    try:
+        database = access.DBEngine.Open(source, WithWindow=False)
+        database.SaveAs(target, format)
+        database.Close()
+        #copy_file(source, target_dir + source[2:])
+        os.remove(source)
+    except Exception as e:
+        print(e)
+        handle_error(source)
 
 
 def process_file(path):
+    path = str(path)
+    print (path)
+    
     if os.path.isdir(path):
         return 0
 
     extension = pathlib.Path(path).suffix[1:].lower()
-    path = str(path)
-
-    #print (path)
     #print (os.path.basename(path))
+
     if os.path.basename(path).startswith('~$'):
         print (path)
         os.remove(path)
         return 0
-        
+
     if extension in ['docx', 'doc', 'docm', 'dotx', 'dot', 'dotm', 'odt']:
         path, processing_needed = handle_fake_files(path, extension, ['docx', 'dotx'])
         if not processing_needed:
             return 0
         
-        print (path)
+        #print (path)
         if extension in ['dotx', 'dot', 'dotm']:
             format = DOTX_FILE_FORMAT
         else:
@@ -174,7 +200,7 @@ def process_file(path):
         if not processing_needed:
             return 0
             
-        print (path)
+        #print (path)
         if extension in ['xltx', 'xlt', 'xltm']:
             format = XLTX_FILE_FORMAT
         else:
@@ -195,7 +221,7 @@ def process_file(path):
         if not processing_needed:
             return 0
         
-        print (path)
+        #print (path)
         if extension in ['potx', 'pot', 'potm']:
             format = POTX_FILE_FORMAT
         elif extension in ['ppsx', 'pps', 'ppsm']:
@@ -213,8 +239,22 @@ def process_file(path):
         process_powerpoint(path, new_path, format, legacy_target_dir)
         return 1
         
+    elif extension in ['accdb', 'mdb']: # accdt
+        path, processing_needed = handle_fake_files(path, extension, ['accdb'])
+        if not processing_needed:
+            return 0
+        
+        #print (path)
+        format = ACCDB_FILE_FORMAT
+        
+        if extension in ['mdb']:
+            new_path = path[:-3] + 'accdb'
+
+        process_access(path, new_path, format, legacy_target_dir)
+        return 1
+        
     elif extension in ['msg', 'exe', 'msi', 'bat', 'lnk', 'reg', 'pol', 'ps1', 'psm1', 'psd1', 'ps1xml', 'pssc', 'psrc', 'cdxml']:
-        print (path)
+        #print (path)
         placeholder = open(path + '.txt', 'w')
         placeholder.write('file might be malicious and was moved to a backup location, please contact your IT')
         placeholder.close()
@@ -226,10 +266,12 @@ def process_file(path):
 if __name__ == "__main__":
     print(f'Processing folder: {source}')
     file_count = 0
+    issue_count = 0
     for path in pathlib.Path(source).rglob('*.*'):
         try:
             file_count += process_file(path)
         except Exception as e:
+            issue_count += 1
             path = str(path)
             if hasattr(e, 'message'):
                 error_msg = f'ERROR: could not process \'{path}\' {e.message}\n'
@@ -259,4 +301,5 @@ if __name__ == "__main__":
 
     logfile.close()
     print(f'converted {file_count} files')
+    print(f'had {issue_count} issues')
     input('Press Enter to continue...')
