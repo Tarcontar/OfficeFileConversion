@@ -3,9 +3,11 @@ import re
 import sys
 import pathlib
 import binascii
+import queue
 import shutil
 import win32com.client as win32
 from win32com.client import constants
+from time import sleep
 import win32com
 from multiprocessing import Process
 
@@ -17,7 +19,7 @@ from multiprocessing import Process
 source = 'C:\\Users\\admin\\Desktop\\OfficeFileConversion - Kopie\\source'
 issue_target_dir = 'C:\\IF'
 legacy_target_dir = 'C:\\BF'
-logfile = open('C:\\log.txt', 'a')
+logfile_path = 'C:\\log.txt'
 
 DOCX_FILE_FORMAT = 12
 DOTX_FILE_FORMAT = 14
@@ -69,8 +71,6 @@ except AttributeError:
     shutil.rmtree(python_temp)
     access = win32.gencache.EnsureDispatch('Access.Application')
 
-
-
 def get_magic(path):
     with open (path, 'rb') as myfile:
         header = myfile.read(4)
@@ -82,15 +82,22 @@ def copy_file(source, target):
     shutil.copyfile(source, target)
 
 
-def handle_error(path):
-    error_msg = f'ERROR: could not convert \'{path}\' \n'
-    print(error_msg)
-    logfile.write(error_msg)
-    placeholder = open(path + '.txt', 'w')
-    placeholder.write('file could not be converted')
-    placeholder.close()
-    copy_file(path, issue_target_dir + path[2:])
-    os.remove(path)
+error_queue = queue.Queue()
+
+def handle_errors():
+    logfile = open(logfile_path, 'a')
+    while True:
+        while not error_queue.empty():
+            msg = error_queue.get()
+            error_msg = f'ERROR: could not convert \'{msg}\' \n'
+            print(error_msg)
+            logfile.write(error_msg)
+            placeholder = open(path + '.txt', 'w')
+            placeholder.write('file could not be converted')
+            placeholder.close()
+            copy_file(path, issue_target_dir + path[2:])
+            os.remove(path)
+        sleep(1)
     
     
 def handle_fake_files(path, extension, extensions_filter):
@@ -114,7 +121,7 @@ def process_word(source, target, format, target_dir):
         os.remove(source)
     except Exception as e:
         print(e)
-        handle_error(source)
+        error_queue.put(source)
         return False
     return True
     
@@ -130,7 +137,7 @@ def process_excel(source, target, format, target_dir):
         os.remove(source)
     except Exception as e:
         print(e)
-        handle_error(source)
+        error_queue.put(source)
         return False
     return True
     
@@ -144,19 +151,28 @@ def process_powerpoint(source, target, format, target_dir):
         os.remove(source)
     except Exception as e:
         print(e)
-        handle_error(source)
+        error_queue.put(source)
         
         
 def process_access(source, target, format, target_dir):
     try:
-        database = access.DBEngine.Open(source, WithWindow=False)
-        database.SaveAs(target, format)
-        database.Close()
+        print(access)
+        database = access.DBEngine.OpenDatabase(source)
+        print(format)
+        print(dir(access.DBEngine))
+        #print(dir(database))
+        #database.Activate()
+        #access.ActiveDatabase.SaveAs(target, format)
+        #database.SaveAs(target, format)
+        #database.Close()
         #copy_file(source, target_dir + source[2:])
-        os.remove(source)
+        #os.remove(source)
+        print('done')
     except Exception as e:
+        if hasattr(e, 'message'):
+            print(e.message)
         print(e)
-        handle_error(source)
+        #handle_error(source)
 
 
 def process_file(path):
@@ -239,21 +255,20 @@ def process_file(path):
         process_powerpoint(path, new_path, format, legacy_target_dir)
         return 1
         
-    elif extension in ['accdb', 'mdb']: # accdt
-        path, processing_needed = handle_fake_files(path, extension, ['accdb'])
-        if not processing_needed:
-            return 0
+    #elif extension in ['accdb', 'mdb']: # accdt
+    #    #print (path)
+    #    format = ACCDB_FILE_FORMAT
+    #    
+    #    if extension in ['mdb']:
+    #        new_path = path[:-3] + 'accdb'
+    #    else:
+    #        new_path = path
+#
+    #    for i in range(0, 100):
+    #        process_access(path, path[:-6] + f'.te{i}', i, legacy_target_dir)
+    #    return 1
         
-        #print (path)
-        format = ACCDB_FILE_FORMAT
-        
-        if extension in ['mdb']:
-            new_path = path[:-3] + 'accdb'
-
-        process_access(path, new_path, format, legacy_target_dir)
-        return 1
-        
-    elif extension in ['msg', 'exe', 'msi', 'bat', 'lnk', 'reg', 'pol', 'ps1', 'psm1', 'psd1', 'ps1xml', 'pssc', 'psrc', 'cdxml']:
+    elif extension in ['msg', 'cmd', 'exe', 'msi', 'bat', 'lnk', 'reg', 'pol', 'ps1', 'psm1', 'psd1', 'ps1xml', 'pssc', 'psrc', 'cdxml']:
         #print (path)
         placeholder = open(path + '.txt', 'w')
         placeholder.write('file might be malicious and was moved to a backup location, please contact your IT')
@@ -267,6 +282,10 @@ if __name__ == "__main__":
     print(f'Processing folder: {source}')
     file_count = 0
     issue_count = 0
+    
+    error_worker = Process(target=handle_errors)
+    error_worker.start()
+    
     for path in pathlib.Path(source).rglob('*.*'):
         try:
             file_count += process_file(path)
@@ -283,6 +302,8 @@ if __name__ == "__main__":
                 os.remove(path)
             except:
                 pass
+
+    error_worker.join()
 
     try:     
         word.Application.Quit()
