@@ -85,8 +85,10 @@ def copy_file(source, target):
 error_queue = queue.Queue()
 
 def handle_errors():
-    logfile = open(logfile_path, 'a')
     while True:
+        logfile = None
+        if not error_queue.empty():
+            logfile = open(logfile_path, 'a')
         while not error_queue.empty():
             msg = error_queue.get()
             error_msg = f'ERROR: could not convert \'{msg}\' \n'
@@ -97,6 +99,8 @@ def handle_errors():
             placeholder.close()
             copy_file(path, issue_target_dir + path[2:])
             os.remove(path)
+        if logfile is not None:
+            logfile.close()
         sleep(1)
     
     
@@ -297,7 +301,7 @@ if __name__ == "__main__":
             else:
                 error_msg = f'ERROR: could not process \'{path}\'\n'
             print(error_msg)
-            logfile.write(error_msg)
+            #logfile.write(error_msg)
             try:
                 os.remove(path)
             except:
