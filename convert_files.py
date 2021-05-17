@@ -9,11 +9,10 @@ from win32com.client import constants
 import win32com
 from multiprocessing import Process
 
-source = 'X:\\Anfragepakete'
+source = sys.argv[1]
 issue_target_dir = 'X:\\ZZ\\IF'
 legacy_target_dir = 'X:\\ZZ\\BF'
 logfile = open('X:\\ZZ\\log.txt', 'a')
-
 
 DOCX_FILE_FORMAT = 12
 DOTX_FILE_FORMAT = 14
@@ -29,14 +28,35 @@ current_dir = pathlib.Path(__file__).parent.absolute()
 print(f'processing all [docx, doc, docm, dot, dotm, odt, xlsx, xls, xlsm, xlsb, xlt, xltm, ods, pptx, ppt, pptm, pot, potm, pps, ppsm, odp] files in \'{source}\'')
 print('do NOT close any opening office application windows (minimize them instead)')
 
+python_temp = 'C:\\Users\\admin\\AppData\\Local\\Temp\\gen_py'
 
-word = win32.gencache.EnsureDispatch('Word.Application')
-word.DisplayAlerts = False
-excel = win32.gencache.EnsureDispatch('Excel.Application')
-excel.DisplayAlerts = False
-excel.EnableEvents = False
-ppt = win32.gencache.EnsureDispatch('Powerpoint.Application')
-ppt.DisplayAlerts = constants.ppAlertsNone
+
+try:
+    word = win32.gencache.EnsureDispatch('Word.Application')
+    word.DisplayAlerts = False
+except AttributeError:
+    shutil.rmtree(python_temp)
+    word = win32.gencache.EnsureDispatch('Word.Application')
+    word.DisplayAlerts = False
+    
+try:
+    excel = win32.gencache.EnsureDispatch('Excel.Application')
+    excel.DisplayAlerts = False
+    excel.EnableEvents = False
+except AttributeError:
+    shutil.rmtree(python_temp)
+    excel = win32.gencache.EnsureDispatch('Excel.Application')
+    excel.DisplayAlerts = False
+    excel.EnableEvents = False
+    
+try:
+    ppt = win32.gencache.EnsureDispatch('Powerpoint.Application')
+    ppt.DisplayAlerts = constants.ppAlertsNone
+except AttributeError:
+    shutil.rmtree(python_temp)
+    ppt = win32.gencache.EnsureDispatch('Powerpoint.Application')
+    ppt.DisplayAlerts = constants.ppAlertsNone
+
 
 
 def get_magic(path):
