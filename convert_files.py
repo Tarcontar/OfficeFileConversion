@@ -71,6 +71,7 @@ except AttributeError:
     shutil.rmtree(python_temp)
     access = win32.gencache.EnsureDispatch('Access.Application')
 
+
 def get_magic(path):
     with open (path, 'rb') as myfile:
         header = myfile.read(4)
@@ -82,25 +83,45 @@ def copy_file(source, target):
     shutil.copyfile(source, target)
 
 
+logging_queue = queue.Queue()
+
+def handle_logging():
+    while True:
+        logfile = None
+        if not logging_queue.empty():
+            logfile = open(logfile_path, 'a')
+        while not logging_queue.empty():
+            msg = logging_queue.get()
+            print(error_msg)
+            logfile.write(error_msg)
+        if logfile is not None:
+            logfile.close()
+        sleep(1)
+
+copy_queue = queue.Queue()
+
+def handle_copying():
+    while True:
+        while not copy_queue.empty():
+            path = copy_queue.get()
+            copy_file(path, issue_target_dir + path[2:])
+            os.remove(path)
+        sleep(1)
+
+
 error_queue = queue.Queue()
 
 def handle_errors():
     while True:
-        logfile = None
-        if not error_queue.empty():
-            logfile = open(logfile_path, 'a')
         while not error_queue.empty():
             msg = error_queue.get()
             error_msg = f'ERROR: could not convert \'{msg}\' \n'
             print(error_msg)
-            logfile.write(error_msg)
+            logging_queue.put(error_msg)
             placeholder = open(path + '.txt', 'w')
             placeholder.write('file could not be converted')
             placeholder.close()
-            copy_file(path, issue_target_dir + path[2:])
-            os.remove(path)
-        if logfile is not None:
-            logfile.close()
+            copy_queue.put(path)
         sleep(1)
     
     
@@ -114,7 +135,7 @@ def handle_fake_files(path, extension, extensions_filter):
     path = path[:-1]
     return path, True
     
-
+    
 def process_word(source, target, format, target_dir):
     try:
         doc = word.Documents.Open(source, ConfirmConversions=False, Visible=False, PasswordDocument="invalid")
@@ -277,18 +298,36 @@ def process_file(path):
         placeholder = open(path + '.txt', 'w')
         placeholder.write('file might be malicious and was moved to a backup location, please contact your IT')
         placeholder.close()
-        copy_file(path, issue_target_dir + path[2:])
-        os.remove(path)
+        copy_queue.put(path)
     return 0
     
+    
+def start_process(target_func):
+    worker = Process(target=target_func)
+    worker.start()
+    return worker
+    
+def stop_process(process, queue):
+    while not queue.empty():
+        sleep(1)
+    process.join()
+    
+    
+def stop_application(application):
+    try:     
+        application.Quit()
+    except:
+        pass
+ 
  
 if __name__ == "__main__":
     print(f'Processing folder: {source}')
     file_count = 0
     issue_count = 0
     
-    error_worker = Process(target=handle_errors)
-    error_worker.start()
+    logging_worker = start_process(handle_logging)
+    copy_worker = start_process(handle_copying)
+    error_worker = start_process(handle_errors)
     
     for path in pathlib.Path(source).rglob('*.*'):
         try:
@@ -301,30 +340,20 @@ if __name__ == "__main__":
             else:
                 error_msg = f'ERROR: could not process \'{path}\'\n'
             print(error_msg)
-            #logfile.write(error_msg)
+            logging_queue.put(error_msg)
             try:
                 os.remove(path)
             except:
                 pass
 
-    error_worker.join()
+    stop_process(logging_worker, logging_queue)
+    stop_process(copy_worker, copy_queue)
+    stop_process(error_worker, error_queue)
+   
+    stop_application(word.Application)
+    stop_application(excel.Application)
+    stop_application(ppt)
 
-    try:     
-        word.Application.Quit()
-    except:
-        pass
-        
-    try:     
-        excel.Application.Quit()
-    except:
-        pass
-        
-    try:     
-        ppt.Quit()
-    except:
-        pass
-
-    logfile.close()
     print(f'converted {file_count} files')
     print(f'had {issue_count} issues')
     input('Press Enter to continue...')
