@@ -4,6 +4,7 @@ import sys
 import pathlib
 import binascii
 import shutil
+import pythoncom
 import win32com.client as win32
 from win32com.client import constants
 import win32com
@@ -13,6 +14,12 @@ source = sys.argv[1]
 issue_target_dir = 'X:\\ZZ\\IF'
 legacy_target_dir = 'X:\\ZZ\\BF'
 logfile = open('X:\\ZZ\\log.txt', 'a')
+
+process_malicious = True #if len(sys.argv) >= 3 and sys.argv[2] in ['True', 'true'] else False
+
+#issue_target_dir = 'C:\\IF'
+#legacy_target_dir = 'C:\\BF'
+#logfile = open('C:\\log.txt', 'a')
 
 DOCX_FILE_FORMAT = 12
 DOTX_FILE_FORMAT = 14
@@ -31,32 +38,23 @@ print('do NOT close any opening office application windows (minimize them instea
 python_temp = 'C:\\Users\\admin\\AppData\\Local\\Temp\\gen_py'
 
 
-try:
+def setup_word():
     word = win32.gencache.EnsureDispatch('Word.Application')
     word.DisplayAlerts = False
-except AttributeError:
-    shutil.rmtree(python_temp)
-    word = win32.gencache.EnsureDispatch('Word.Application')
-    word.DisplayAlerts = False
+    return word
     
-try:
+    
+def setup_excel():
     excel = win32.gencache.EnsureDispatch('Excel.Application')
     excel.DisplayAlerts = False
     excel.EnableEvents = False
-except AttributeError:
-    shutil.rmtree(python_temp)
-    excel = win32.gencache.EnsureDispatch('Excel.Application')
-    excel.DisplayAlerts = False
-    excel.EnableEvents = False
-    
-try:
-    ppt = win32.gencache.EnsureDispatch('Powerpoint.Application')
-    ppt.DisplayAlerts = constants.ppAlertsNone
-except AttributeError:
-    shutil.rmtree(python_temp)
-    ppt = win32.gencache.EnsureDispatch('Powerpoint.Application')
-    ppt.DisplayAlerts = constants.ppAlertsNone
+    return excel
 
+
+def setup_ppt():
+    ppt = win32.gencache.EnsureDispatch('Powerpoint.Application')
+    ppt.DisplayAlerts = constants.ppAlertsNone
+    return ppt
 
 
 def get_magic(path):
@@ -92,68 +90,81 @@ def handle_fake_files(path, extension, extensions_filter):
     return path, True
     
 
-def process_word(source, target, format, target_dir):
+def process_word(word, source, target, format, target_dir):
     try:
+        if word is None:
+            word = setup_word()
         doc = word.Documents.Open(source, ConfirmConversions=False, Visible=False, PasswordDocument="invalid")
         doc.Activate()
         word.ActiveDocument.SaveAs(target, format)
         doc.Close(False)
         #copy_file(source, target_dir + source[2:])
         os.remove(source)
+    except pythoncom.com_error as error:
+        print(error)
+        print('Exception occured -> word was closed')
     except Exception as e:
         print(e)
         handle_error(source)
-        return False
-    return True
     
     
-def process_excel(source, target, format, target_dir):
+def process_excel(excel, source, target, format, target_dir):
     try:
-        wb = excel.Workbooks.Open(source, Password='')
+        if excel is None:
+            excel = setup_excel()
+        wb = excel.Workbooks.Open(source, UpdateLinks=False, Password='')
         wb.Application.DisplayAlerts = False
+        wb.Application.EnableEvents = False
         wb.SaveAs(target, FileFormat=format, ConflictResolution=2)
         wb.Close()
         #copy_file(source, target_dir + source[2:])
         os.remove(source)
+    except pythoncom.com_error as error:
+        print(error)
+        print('Exception occured -> excel was closed')
     except Exception as e:
         print(e)
         handle_error(source)
-        return False
-    return True
     
     
-def process_powerpoint(source, target, format, target_dir):
+def process_powerpoint(ppt, source, target, format, target_dir):
     try:
+        if ppt is None:
+            ppt = setup_ppt()
         presentation = ppt.Presentations.Open(source + ':::', WithWindow=False)
         presentation.SaveAs(target, format)
         presentation.Close()
         #copy_file(source, target_dir + source[2:])
         os.remove(source)
+    except pythoncom.com_error as error:
+        print(error)
+        print('Exception occured -> powerpoint was closed')
     except Exception as e:
         print(e)
         handle_error(source)
 
 
-def process_file(path):
+def process_file(word, excel, ppt, path):
+    path = str(path)
+    print (path)
+    
     if os.path.isdir(path):
         return 0
 
     extension = pathlib.Path(path).suffix[1:].lower()
-    path = str(path)
-
-    #print (path)
     #print (os.path.basename(path))
+
     if os.path.basename(path).startswith('~$'):
         print (path)
         os.remove(path)
         return 0
-        
+
     if extension in ['docx', 'doc', 'docm', 'dotx', 'dot', 'dotm', 'odt']:
         path, processing_needed = handle_fake_files(path, extension, ['docx', 'dotx'])
         if not processing_needed:
             return 0
         
-        print (path)
+        #print (path)
         if extension in ['dotx', 'dot', 'dotm']:
             format = DOTX_FILE_FORMAT
         else:
@@ -166,7 +177,7 @@ def process_file(path):
         else:
             new_path = path + 'x'
         
-        process_word(path, new_path, format, legacy_target_dir)
+        process_word(word, path, new_path, format, legacy_target_dir)
         return 1
         
     elif extension in ['xlsx', 'xls', 'xlsm', 'xlsb', 'xltx', 'xlt', 'xltm', 'ods']:
@@ -174,7 +185,7 @@ def process_file(path):
         if not processing_needed:
             return 0
             
-        print (path)
+        #print (path)
         if extension in ['xltx', 'xlt', 'xltm']:
             format = XLTX_FILE_FORMAT
         else:
@@ -187,7 +198,7 @@ def process_file(path):
         else:
             new_path = path + 'x'
         
-        process_excel(path, new_path, format, legacy_target_dir)
+        process_excel(excel, path, new_path, format, legacy_target_dir)
         return 1
 
     elif extension in ['pptx', 'ppt', 'pptm', 'potx', 'pot', 'potm', 'ppsx', 'pps', 'ppsm', 'odp']:
@@ -195,7 +206,7 @@ def process_file(path):
         if not processing_needed:
             return 0
         
-        print (path)
+        #print (path)
         if extension in ['potx', 'pot', 'potm']:
             format = POTX_FILE_FORMAT
         elif extension in ['ppsx', 'pps', 'ppsm']:
@@ -210,11 +221,15 @@ def process_file(path):
         else:
             new_path = path + 'x'
 
-        process_powerpoint(path, new_path, format, legacy_target_dir)
+        process_powerpoint(ppt, path, new_path, format, legacy_target_dir)
         return 1
         
-    elif extension in ['msg', 'exe', 'msi', 'bat', 'lnk', 'reg', 'pol', 'ps1', 'psm1', 'psd1', 'ps1xml', 'pssc', 'psrc', 'cdxml']:
-        print (path)
+    # add js, zip?
+    elif process_malicious and extension in ['psd', 'osd', 'py', 'msg', 'exe', 'msi', 'bat', 'lnk', 'reg', 'pol', 'ps1', 'psm1', 'psd1', 'ps1xml', 'pssc', 'psrc', 'cdxml']:
+        #print (path)
+        if 'Win-Plantafel2' in path:
+            return 0
+        
         placeholder = open(path + '.txt', 'w')
         placeholder.write('file might be malicious and was moved to a backup location, please contact your IT')
         placeholder.close()
@@ -226,10 +241,31 @@ def process_file(path):
 if __name__ == "__main__":
     print(f'Processing folder: {source}')
     file_count = 0
+    issue_count = 0
+    
+    try:
+        word = setup_word()
+    except AttributeError:
+        shutil.rmtree(python_temp)
+        word = setup_word()
+    
+    try:
+        excel = setup_excel()
+    except AttributeError:
+        shutil.rmtree(python_temp)
+        excel = setup_excel()
+        
+    try:
+        ppt = setup_ppt()
+    except AttributeError:
+        shutil.rmtree(python_temp)
+        ppt = setup_ppt()
+    
     for path in pathlib.Path(source).rglob('*.*'):
         try:
-            file_count += process_file(path)
+            file_count += process_file(word, excel, ppt, path)
         except Exception as e:
+            issue_count += 1
             path = str(path)
             if hasattr(e, 'message'):
                 error_msg = f'ERROR: could not process \'{path}\' {e.message}\n'
@@ -259,4 +295,5 @@ if __name__ == "__main__":
 
     logfile.close()
     print(f'converted {file_count} files')
+    print(f'had {issue_count} issues')
     input('Press Enter to continue...')
