@@ -155,15 +155,27 @@ def process_powerpoint(ppt, source, target, format, target_dir):
         
         
 def process_outlook(outlook, source):
-    msg = outlook.OpenSharedItem(source)
-    for attachment in msg.Attachments:
-        print (attachment)
-        input()
-        ext = pathlib.Path(attachment).suffix[1:].lower()
-        if ext in word_filter or ext in excel_filter or ext in ppt_filter or ext in malicious_filter:
-            msg.close()
-            handle_error(path)
-            return 0
+    try:
+        if outlook is None:
+            outlook = setup_outlook()
+        msg = outlook.OpenSharedItem(source)
+        for attachment in msg.Attachments:
+            print (attachment)
+            input()
+            ext = pathlib.Path(attachment).suffix[1:].lower()
+            print(ext)
+            if ext in word_filter or ext in excel_filter or ext in ppt_filter or ext in malicious_filter:
+                input()
+                msg.close()
+                handle_error(path)
+                return 0
+    except pythoncom.com_error as error:
+        print(error)
+        print('Exception occured -> outlook was closed')
+        handle_error(source)
+    except Exception as e:
+        print(e)
+        handle_error(source)
         
 
 def process_zip(source):
