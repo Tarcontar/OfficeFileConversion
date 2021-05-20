@@ -60,7 +60,7 @@ def setup_ppt():
     
     
 def setup_outlook():
-    outlook = win32.client.Dispatch('Outlook.Application').GetNamespace('MAPI')
+    outlook = win32.gencache.EnsureDispatch('Outlook.Application').GetNamespace('MAPI')
     return outlook
 
 
