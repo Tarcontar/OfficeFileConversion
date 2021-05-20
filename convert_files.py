@@ -103,6 +103,7 @@ def process_word(word, source, target, format, target_dir):
     except pythoncom.com_error as error:
         print(error)
         print('Exception occured -> word was closed')
+        handle_error(source)
     except Exception as e:
         print(e)
         handle_error(source)
@@ -122,6 +123,7 @@ def process_excel(excel, source, target, format, target_dir):
     except pythoncom.com_error as error:
         print(error)
         print('Exception occured -> excel was closed')
+        handle_error(source)
     except Exception as e:
         print(e)
         handle_error(source)
@@ -139,6 +141,7 @@ def process_powerpoint(ppt, source, target, format, target_dir):
     except pythoncom.com_error as error:
         print(error)
         print('Exception occured -> powerpoint was closed')
+        handle_error(source)
     except Exception as e:
         print(e)
         handle_error(source)
@@ -225,7 +228,7 @@ def process_file(word, excel, ppt, path):
         return 1
         
     # add js, zip?
-    elif process_malicious and extension in ['psd', 'osd', 'py', 'msg', 'exe', 'msi', 'bat', 'lnk', 'reg', 'pol', 'ps1', 'psm1', 'psd1', 'ps1xml', 'pssc', 'psrc', 'cdxml']:
+    elif process_malicious and extension in ['xlam', 'psd', 'osd', 'py', 'msg', 'exe', 'msi', 'bat', 'lnk', 'reg', 'pol', 'ps1', 'psm1', 'psd1', 'ps1xml', 'pssc', 'psrc', 'cdxml']:
         #print (path)
         if 'Win-Plantafel2' in path:
             return 0
