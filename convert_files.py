@@ -5,21 +5,23 @@ import pathlib
 import binascii
 import shutil
 import pythoncom
+import zipfile
 import win32com.client as win32
 from win32com.client import constants
 import win32com
 from multiprocessing import Process
 
-source = sys.argv[1]
-issue_target_dir = 'X:\\ZZ\\IF'
-legacy_target_dir = 'X:\\ZZ\\BF'
-logfile = open('X:\\ZZ\\log.txt', 'a')
+#source = sys.argv[1]
+#issue_target_dir = 'X:\\ZZ\\IF'
+#legacy_target_dir = 'X:\\ZZ\\BF'
+#logfile = open('X:\\ZZ\\log.txt', 'a')
 
 process_malicious = True #if len(sys.argv) >= 3 and sys.argv[2] in ['True', 'true'] else False
 
-#issue_target_dir = 'C:\\IF'
-#legacy_target_dir = 'C:\\BF'
-#logfile = open('C:\\log.txt', 'a')
+source = 'C:\\Users\\admin\\Desktop\\OfficeFileConversion - Kopie (2)\\source'
+issue_target_dir = 'C:\\IF'
+legacy_target_dir = 'C:\\BF'
+logfile = open('C:\\log.txt', 'a')
 
 DOCX_FILE_FORMAT = 12
 DOTX_FILE_FORMAT = 14
@@ -55,6 +57,11 @@ def setup_ppt():
     ppt = win32.gencache.EnsureDispatch('Powerpoint.Application')
     ppt.DisplayAlerts = constants.ppAlertsNone
     return ppt
+    
+    
+def setup_outlook():
+    outlook = win32.client.Dispatch('Outlook.Application').GetNamespace('MAPI')
+    return outlook
 
 
 def get_magic(path):
@@ -73,7 +80,7 @@ def handle_error(path):
     print(error_msg)
     logfile.write(error_msg)
     placeholder = open(path + '.txt', 'w')
-    placeholder.write('file could not be converted')
+    placeholder.write('file could not be converted please contact your IT')
     placeholder.close()
     copy_file(path, issue_target_dir + path[2:])
     os.remove(path)
@@ -145,9 +152,50 @@ def process_powerpoint(ppt, source, target, format, target_dir):
     except Exception as e:
         print(e)
         handle_error(source)
+        
+        
+def process_outlook(outlook, source):
+    msg = outlook.OpenSharedItem(source)
+    for attachment in msg.Attachments:
+        print (attachment)
+        input()
+        ext = pathlib.Path(attachment).suffix[1:].lower()
+        if ext in word_filter or ext in excel_filter or ext in ppt_filter or ext in malicious_filter:
+            msg.close()
+            handle_error(path)
+            return 0
+        
 
+def process_zip(source):
+    zip = zipfile.ZipFile(path)
+    
+    for zinfo in zip.infolist():
+        is_encrypted = zinfo.flag_bits & 0x1 
+        if is_encrypted:
+            print (f'WARNING: {path} is encrypted!')
+            zip.close()
+            print(zip.namelist())
+            input()
+            handle_error(path)
+            return 0
+    
+    for name in zip.namelist():
+        ext = pathlib.Path(name).suffix[1:].lower()
+        if ext in word_filter or ext in excel_filter or ext in ppt_filter or ext in malicious_filter:
+            zip.close()
+            print(zip.namelist())
+            input()
+            handle_error(path)
+            return 0
 
-def process_file(word, excel, ppt, path):
+        
+word_filter = ['docx', 'doc', 'docm', 'dotx', 'dot', 'dotm', 'odt']
+excel_filter = ['xlsx', 'xls', 'xlsm', 'xlsb', 'xltx', 'xlt', 'xltm', 'ods']
+ppt_filter = ['pptx', 'ppt', 'pptm', 'potx', 'pot', 'potm', 'ppsx', 'pps', 'ppsm', 'odp']
+malicious_filter = ['xlam', 'osd', 'py', 'msg', 'exe', 'msi', 'bat', 'lnk', 'reg', 'pol', 'ps1', 'psm1', 'psd1', 'ps1xml', 'pssc', 'psrc', 'cdxml']
+        
+
+def process_file(word, excel, ppt, outlook, path):
     path = str(path)
     print (path)
     
@@ -161,8 +209,8 @@ def process_file(word, excel, ppt, path):
         print (path)
         os.remove(path)
         return 0
-
-    if extension in ['docx', 'doc', 'docm', 'dotx', 'dot', 'dotm', 'odt']:
+    
+    if extension in word_filter:
         path, processing_needed = handle_fake_files(path, extension, ['docx', 'dotx'])
         if not processing_needed:
             return 0
@@ -183,7 +231,7 @@ def process_file(word, excel, ppt, path):
         process_word(word, path, new_path, format, legacy_target_dir)
         return 1
         
-    elif extension in ['xlsx', 'xls', 'xlsm', 'xlsb', 'xltx', 'xlt', 'xltm', 'ods']:
+    elif extension in excel_filter:
         path, processing_needed = handle_fake_files(path, extension, ['xlsx', 'xltx'])
         if not processing_needed:
             return 0
@@ -204,7 +252,7 @@ def process_file(word, excel, ppt, path):
         process_excel(excel, path, new_path, format, legacy_target_dir)
         return 1
 
-    elif extension in ['pptx', 'ppt', 'pptm', 'potx', 'pot', 'potm', 'ppsx', 'pps', 'ppsm', 'odp']:
+    elif extension in ppt_filter:
         path, processing_needed = handle_fake_files(path, extension, ['pptx', 'potx', 'ppsx'])
         if not processing_needed:
             return 0
@@ -227,8 +275,11 @@ def process_file(word, excel, ppt, path):
         process_powerpoint(ppt, path, new_path, format, legacy_target_dir)
         return 1
         
-    # add js, zip?
-    elif process_malicious and extension in ['xlam', 'psd', 'osd', 'py', 'msg', 'exe', 'msi', 'bat', 'lnk', 'reg', 'pol', 'ps1', 'psm1', 'psd1', 'ps1xml', 'pssc', 'psrc', 'cdxml']:
+    elif extension == 'msg':
+        process_outlook(outlook, path)
+        return 1
+        
+    elif process_malicious and extension in malicious_filter:
         #print (path)
         if 'Win-Plantafel2' in path:
             return 0
@@ -238,6 +289,10 @@ def process_file(word, excel, ppt, path):
         placeholder.close()
         copy_file(path, issue_target_dir + path[2:])
         os.remove(path)
+        
+    elif zipfile.is_zipfile(path):
+        process_zip(path)
+
     return 0
     
  
@@ -263,10 +318,16 @@ if __name__ == "__main__":
     except AttributeError:
         shutil.rmtree(python_temp)
         ppt = setup_ppt()
+        
+    try:
+        outlook = setup_outlook()
+    except AttributeError:
+        shutil.rmtree(python_temp)
+        outlook = setup_outlook()
     
     for path in pathlib.Path(source).rglob('*.*'):
         try:
-            file_count += process_file(word, excel, ppt, path)
+            file_count += process_file(word, excel, ppt, outlook, path)
         except Exception as e:
             issue_count += 1
             path = str(path)
@@ -293,6 +354,11 @@ if __name__ == "__main__":
         
     try:     
         ppt.Quit()
+    except:
+        pass
+        
+    try:     
+        outlook.Quit()
     except:
         pass
 
