@@ -179,26 +179,30 @@ def process_outlook(outlook, source):
         
 
 def process_zip(source):
-    zip = zipfile.ZipFile(path)
-    
-    for zinfo in zip.infolist():
-        is_encrypted = zinfo.flag_bits & 0x1 
-        if is_encrypted:
-            print (f'WARNING: {path} is encrypted!')
-            zip.close()
-            print(zip.namelist())
-            input()
-            handle_error(path)
-            return 0
-    
-    for name in zip.namelist():
-        ext = pathlib.Path(name).suffix[1:].lower()
-        if ext in word_filter or ext in excel_filter or ext in ppt_filter or ext in malicious_filter:
-            zip.close()
-            print(zip.namelist())
-            input()
-            handle_error(path)
-            return 0
+    try:
+        zip = zipfile.ZipFile(path)
+        
+        for zinfo in zip.infolist():
+            is_encrypted = zinfo.flag_bits & 0x1 
+            if is_encrypted:
+                print (f'WARNING: {path} is encrypted!')
+                zip.close()
+                print(zip.namelist())
+                input()
+                handle_error(path)
+                return 0
+        
+        for name in zip.namelist():
+            ext = pathlib.Path(name).suffix[1:].lower()
+            if ext in word_filter or ext in excel_filter or ext in ppt_filter or ext in malicious_filter:
+                zip.close()
+                print(zip.namelist())
+                input()
+                handle_error(path)
+                return 0
+    except Exception as e:
+        print(e)
+        handle_error(source)
 
         
 word_filter = ['docx', 'doc', 'docm', 'dotx', 'dot', 'dotm', 'odt']
