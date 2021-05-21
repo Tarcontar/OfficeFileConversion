@@ -215,8 +215,13 @@ def process_zip(word, excel, ppt, outlook, source):
         os.remove(source)
         
         with zipfile.ZipFile(source, 'w') as newzip:
+            for path in pathlib.Path(target_path):
+                print (path)
             for path in pathlib.Path(target_path).rglob('*.*'):
+                print (path)
                 newzip.write(path)
+                
+        os.remove(target_path)
 
     except Exception as e:
         print(e)
