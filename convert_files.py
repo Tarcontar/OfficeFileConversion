@@ -190,17 +190,35 @@ def process_zip(source):
                 print(zip.namelist())
                 input()
                 handle_error(source)
-                return 0
+                return
         
+        needs_processing = False
         for name in zip.namelist():
             ext = pathlib.Path(name).suffix[1:].lower()
             print(ext)
             if ext in word_filter or ext in excel_filter or ext in ppt_filter or ext in malicious_filter:
-                zip.close()
-                print(zip.namelist())
-                input()
+                needs_processing = True
+                break
+                
+        if not needs_processing:
+            return
+            
+        zip.extractall()
+        zip.close()
+        for path in pathlib.Path(source[:-4]).rglob('*.*'):
+            try:
+                file_count += process_file(word, excel, ppt, outlook, path)
+            except Exception as e:
                 handle_error(source)
-                return 0
+                os.rmdir(source[-4])
+                return
+                  
+        os.remove(source)
+        
+        with ZipFile(source, 'w') as newzip:
+            for path in pathlib.Path(source[:-4]).rglob('*.*'):
+                newzip.write(path)
+
     except Exception as e:
         print(e)
         handle_error(source)
