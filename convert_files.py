@@ -200,20 +200,22 @@ def process_zip(word, excel, ppt, outlook, source):
         if not needs_processing:
             return
             
-        zip.extractall()
+        target_path = source[:-4]
+        zip.extractall(target_path)
+        input()
         zip.close()
-        for path in pathlib.Path(source[:-4]).rglob('*.*'):
+        for path in pathlib.Path(target_path).rglob('*.*'):
             try:
                 process_file(word, excel, ppt, outlook, path)
             except Exception as e:
                 handle_error(source)
-                os.rmdir(source[-4])
+                os.rmdir(target_path)
                 return
                   
         os.remove(source)
         
         with zipfile.ZipFile(source, 'w') as newzip:
-            for path in pathlib.Path(source[:-4]).rglob('*.*'):
+            for path in pathlib.Path(target_path).rglob('*.*'):
                 newzip.write(path)
 
     except Exception as e:
