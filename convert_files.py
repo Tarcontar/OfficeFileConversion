@@ -291,9 +291,9 @@ def process_file(word, excel, ppt, outlook, path):
         process_powerpoint(ppt, path, new_path, format, legacy_target_dir)
         return 1
         
-    elif extension == 'msg':
-        process_outlook(outlook, path)
-        return 1
+    #elif extension == 'msg':
+    #    process_outlook(outlook, path)
+    #    return 1
         
     elif process_malicious and extension in malicious_filter:
         #print (path)
