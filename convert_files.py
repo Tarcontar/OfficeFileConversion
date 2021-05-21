@@ -215,7 +215,7 @@ def process_zip(source):
                   
         os.remove(source)
         
-        with ZipFile(source, 'w') as newzip:
+        with zipfile.ZipFile(source, 'w') as newzip:
             for path in pathlib.Path(source[:-4]).rglob('*.*'):
                 newzip.write(path)
 
