@@ -194,6 +194,7 @@ def process_zip(source):
         
         for name in zip.namelist():
             ext = pathlib.Path(name).suffix[1:].lower()
+            print(ext)
             if ext in word_filter or ext in excel_filter or ext in ppt_filter or ext in malicious_filter:
                 zip.close()
                 print(zip.namelist())
