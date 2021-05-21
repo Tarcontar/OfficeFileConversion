@@ -6,7 +6,6 @@ import binascii
 import shutil
 import pythoncom
 import zipfile
-import time
 import win32com.client as win32
 from win32com.client import constants
 import win32com
@@ -204,17 +203,16 @@ def process_zip(word, excel, ppt, outlook, source):
         target_path = source[:-4]
         zip.extractall(target_path)
         zip.close()
-        for path in pathlib.Path(target_path).rglob('*.*'):
-            try:
-                process_file(word, excel, ppt, outlook, path)
-            except Exception as e:
-                handle_error(source)
-                os.rmdir(target_path)
-                return
+        #for path in pathlib.Path(target_path).rglob('*.*'):
+        #    try:
+        #        process_file(word, excel, ppt, outlook, path)
+        #    except Exception as e:
+        #        handle_error(source)
+        #        os.rmdir(target_path)
+        #        return
                   
         os.remove(source)
         shutil.make_archive(target_path, 'zip', target_path)
-        time.sleep(2)
         os.remove(target_path)
 
     except Exception as e:
