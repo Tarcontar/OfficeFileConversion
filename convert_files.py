@@ -180,29 +180,29 @@ def process_outlook(outlook, source):
 
 def process_zip(word, excel, ppt, outlook, source):
     try:
-        zip = zipfile.ZipFile(source)
-        
-        for zinfo in zip.infolist():
-            is_encrypted = zinfo.flag_bits & 0x1 
-            if is_encrypted:
-                print (f'WARNING: {source} is encrypted!')
-                zip.close()
-                handle_error(source)
-                return
-        
-        needs_processing = False
-        for name in zip.namelist():
-            ext = pathlib.Path(name).suffix[1:].lower()
-            if ext in word_filter or ext in excel_filter or ext in ppt_filter or ext in malicious_filter:
-                needs_processing = True
-                break
-                
-        if not needs_processing:
-            return
+        with zipfile.ZipFile(source) as zip:
+            for zinfo in zip.infolist():
+                is_encrypted = zinfo.flag_bits & 0x1 
+                if is_encrypted:
+                    print (f'WARNING: {source} is encrypted!')
+                    zip.close()
+                    handle_error(source)
+                    return
             
-        target_path = source[:-4]
-        zip.extractall(target_path)
-        zip.close()
+            needs_processing = False
+            for name in zip.namelist():
+                ext = pathlib.Path(name).suffix[1:].lower()
+                if ext in word_filter or ext in excel_filter or ext in ppt_filter or ext in malicious_filter:
+                    needs_processing = True
+                    break
+                    
+            if not needs_processing:
+                return
+                
+            target_path = source[:-4]
+            zip.extractall(target_path)
+            zip.close()
+            
         #for path in pathlib.Path(target_path).rglob('*.*'):
         #    try:
         #        process_file(word, excel, ppt, outlook, path)
