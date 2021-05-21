@@ -33,6 +33,7 @@ XLSX_FILE_FORMAT = 51
 XLTX_FILE_FORMAT = 54
 
 ZIP_FILE_MAGIC = '504b0304'
+EXE_FILE_MAGICS = ['4d5a', '5a4d']
 
 current_dir = pathlib.Path(__file__).parent.absolute()
 print(f'processing all [docx, doc, docm, dot, dotm, odt, xlsx, xls, xlsm, xlsb, xlt, xltm, ods, pptx, ppt, pptm, pot, potm, pps, ppsm, odp] files in \'{source}\'')
@@ -189,16 +190,6 @@ def process_zip(word, excel, ppt, outlook, source):
                 zip.close()
                 handle_error(source)
                 return
-        
-        needs_processing = False
-        for name in zip.namelist():
-            ext = pathlib.Path(name).suffix[1:].lower()
-            if ext in word_filter or ext in excel_filter or ext in ppt_filter or ext in malicious_filter:
-                needs_processing = True
-                break
-                
-        if not needs_processing:
-            return
             
         target_path = source[:-4]
         zip.extractall(target_path)
@@ -368,6 +359,8 @@ if __name__ == "__main__":
                 error_msg = f'ERROR: could not process \'{path}\'\n'
             print(error_msg)
             logfile.write(error_msg)
+            print('press any key to continue...')
+            input()
             try:
                 os.remove(path)
             except:
