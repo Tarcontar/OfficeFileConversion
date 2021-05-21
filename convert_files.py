@@ -187,15 +187,12 @@ def process_zip(source):
             if is_encrypted:
                 print (f'WARNING: {source} is encrypted!')
                 zip.close()
-                print(zip.namelist())
-                input()
                 handle_error(source)
                 return
         
         needs_processing = False
         for name in zip.namelist():
             ext = pathlib.Path(name).suffix[1:].lower()
-            print(ext)
             if ext in word_filter or ext in excel_filter or ext in ppt_filter or ext in malicious_filter:
                 needs_processing = True
                 break
