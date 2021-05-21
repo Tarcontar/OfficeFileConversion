@@ -189,15 +189,16 @@ def process_zip(word, excel, ppt, outlook, source):
                 print (f'WARNING: {source} is encrypted!')
                 zip.close()
                 handle_error(source)
-                return
+                return 0
             
         target_path = source[:-4]
         zip.extractall(target_path)
         zip.close()
             
+        count = 0
         for path in pathlib.Path(target_path).rglob('*.*'):
             try:
-                process_file(word, excel, ppt, outlook, path)
+                count += process_file(word, excel, ppt, outlook, path)
             except Exception as e:
                 handle_error(source)
                 shutil.rmtree(target_path)
@@ -206,10 +207,12 @@ def process_zip(word, excel, ppt, outlook, source):
         os.remove(source)
         shutil.make_archive(target_path, 'zip', target_path)
         shutil.rmtree(target_path)
+        return count
 
     except Exception as e:
         print(e)
         handle_error(source)
+        return 0
 
         
 word_filter = ['docx', 'doc', 'docm', 'dotx', 'dot', 'dotm', 'odt']
@@ -314,7 +317,7 @@ def process_file(word, excel, ppt, outlook, path):
         os.remove(path)
         
     elif zipfile.is_zipfile(path):
-        process_zip(word, excel, ppt, outlook, path)
+        return process_zip(word, excel, ppt, outlook, path)
     return 0
     
  
