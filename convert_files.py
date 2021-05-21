@@ -202,8 +202,6 @@ def process_zip(word, excel, ppt, outlook, source):
             
         target_path = source[:-4]
         zip.extractall(target_path)
-        input()
-        print(target_path)
         zip.close()
         for path in pathlib.Path(target_path).rglob('*.*'):
             try:
@@ -214,8 +212,8 @@ def process_zip(word, excel, ppt, outlook, source):
                 return
                   
         os.remove(source)
-        shutil.make_archive(target_path, 'zip', target_path + 'x')
-        os.remove(target_path)
+        shutil.make_archive(target_path + 'x', 'zip', target_path)
+        #os.remove(target_path)
 
     except Exception as e:
         print(e)
