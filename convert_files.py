@@ -18,7 +18,7 @@ from multiprocessing import Process
 
 process_malicious = True #if len(sys.argv) >= 3 and sys.argv[2] in ['True', 'true'] else False
 
-source = 'C:\\Users\\admin\\Desktop\\OfficeFileConversion - Kopie (2)\\source'
+source = 'C:\\Users\\admin\\Desktop\\OfficeFileConversion\\source'
 issue_target_dir = 'C:\\IF'
 legacy_target_dir = 'C:\\BF'
 logfile = open('C:\\log.txt', 'a')
