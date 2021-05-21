@@ -120,7 +120,7 @@ def process_excel(excel, source, target, format, target_dir):
     try:
         if excel is None:
             excel = setup_excel()
-        wb = excel.Workbooks.Open(source, UpdateLinks=False, Password='')
+        wb = excel.Workbooks.Open(source, UpdateLinks=False, Password='', WriteResPassword='')
         wb.Application.DisplayAlerts = False
         wb.Application.EnableEvents = False
         wb.SaveAs(target, FileFormat=format, ConflictResolution=2)
