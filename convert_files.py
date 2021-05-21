@@ -180,16 +180,16 @@ def process_outlook(outlook, source):
 
 def process_zip(source):
     try:
-        zip = zipfile.ZipFile(path)
+        zip = zipfile.ZipFile(source)
         
         for zinfo in zip.infolist():
             is_encrypted = zinfo.flag_bits & 0x1 
             if is_encrypted:
-                print (f'WARNING: {path} is encrypted!')
+                print (f'WARNING: {source} is encrypted!')
                 zip.close()
                 print(zip.namelist())
                 input()
-                handle_error(path)
+                handle_error(source)
                 return 0
         
         for name in zip.namelist():
@@ -198,7 +198,7 @@ def process_zip(source):
                 zip.close()
                 print(zip.namelist())
                 input()
-                handle_error(path)
+                handle_error(source)
                 return 0
     except Exception as e:
         print(e)
