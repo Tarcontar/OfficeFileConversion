@@ -11,17 +11,18 @@ from win32com.client import constants
 import win32com
 from multiprocessing import Process
 
-#source = sys.argv[1]
-#issue_target_dir = 'X:\\ZZ\\IF'
-#legacy_target_dir = 'X:\\ZZ\\BF'
-#logfile = open('X:\\ZZ\\log.txt', 'a')
 
 process_malicious = True #if len(sys.argv) >= 3 and sys.argv[2] in ['True', 'true'] else False
 
-source = 'C:\\Users\\admin\\Desktop\\OfficeFileConversion\\source'
-issue_target_dir = 'C:\\IF'
-legacy_target_dir = 'C:\\BF'
-logfile = open('C:\\log.txt', 'a')
+source = sys.argv[1]
+issue_target_dir = 'X:\\ZZ\\IF'
+legacy_target_dir = 'X:\\ZZ\\BF'
+logfile = open('X:\\ZZ\\log.txt', 'a')
+
+#source = 'C:\\Users\\admin\\Desktop\\OfficeFileConversion\\source'
+#issue_target_dir = 'C:\\IF'
+#legacy_target_dir = 'C:\\BF'
+#logfile = open('C:\\log.txt', 'a')
 
 DOCX_FILE_FORMAT = 12
 DOTX_FILE_FORMAT = 14
@@ -203,13 +204,13 @@ def process_zip(word, excel, ppt, outlook, source):
         zip.extractall(target_path)
         zip.close()
             
-        #for path in pathlib.Path(target_path).rglob('*.*'):
-        #    try:
-        #        process_file(word, excel, ppt, outlook, path)
-        #    except Exception as e:
-        #        handle_error(source)
-        #        os.rmdir(target_path)
-        #        return
+        for path in pathlib.Path(target_path).rglob('*.*'):
+            try:
+                process_file(word, excel, ppt, outlook, path)
+            except Exception as e:
+                handle_error(source)
+                shutil.rmtree(target_path)
+                return
                   
         os.remove(source)
         shutil.make_archive(target_path, 'zip', target_path)
