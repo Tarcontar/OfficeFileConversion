@@ -33,13 +33,24 @@ XLSX_FILE_FORMAT = 51
 XLTX_FILE_FORMAT = 54
 
 ZIP_FILE_MAGIC = '504b0304'
-EXE_FILE_MAGICS = ['4d5a', '5a4d']
+#EXE_FILE_MAGICS = ['4d5a', '5a4d']
 
 current_dir = pathlib.Path(__file__).parent.absolute()
-print(f'processing all [docx, doc, docm, dot, dotm, odt, xlsx, xls, xlsm, xlsb, xlt, xltm, ods, pptx, ppt, pptm, pot, potm, pps, ppsm, odp] files in \'{source}\'')
+python_temp = 'C:\\Users\\admin\\AppData\\Local\\Temp\\gen_py'
+
+word_filter = ['docx', 'doc', 'docm', 'dotx', 'dot', 'dotm', 'odt']
+excel_filter = ['xlsx', 'xls', 'xlsm', 'xlsb', 'xltx', 'xlt', 'xltm', 'ods']
+ppt_filter = ['pptx', 'ppt', 'pptm', 'potx', 'pot', 'potm', 'ppsx', 'pps', 'ppsm', 'odp']
+outlook_filter = ['msg']
+malicious_filter = ['xlam', 'osd', 'py', 'exe', 'msi', 'bat', 'lnk', 'reg', 'pol', 'ps1', 'psm1', 'psd1', 'ps1xml', 'pssc', 'psrc', 'cdxml']
+
+print(f'processing all {word_filter} files in \'{source}\'')
+print(f'processing all {excel_filter} files in \'{source}\'')
+print(f'processing all {ppt_filter} files in \'{source}\'')
+print(f'processing all {outlook_filter} files in \'{source}\'')
+print(f'processing all {malicious_filter} files in \'{source}\'')
 print('do NOT close any opening office application windows (minimize them instead)')
 
-python_temp = 'C:\\Users\\admin\\AppData\\Local\\Temp\\gen_py'
 
 
 def setup_word():
@@ -214,12 +225,6 @@ def process_zip(word, excel, ppt, outlook, source):
         handle_error(source)
         return 0
 
-        
-word_filter = ['docx', 'doc', 'docm', 'dotx', 'dot', 'dotm', 'odt']
-excel_filter = ['xlsx', 'xls', 'xlsm', 'xlsb', 'xltx', 'xlt', 'xltm', 'ods']
-ppt_filter = ['pptx', 'ppt', 'pptm', 'potx', 'pot', 'potm', 'ppsx', 'pps', 'ppsm', 'odp']
-malicious_filter = ['xlam', 'osd', 'py', 'msg', 'exe', 'msi', 'bat', 'lnk', 'reg', 'pol', 'ps1', 'psm1', 'psd1', 'ps1xml', 'pssc', 'psrc', 'cdxml']
-        
 
 def process_file(word, excel, ppt, outlook, path):
     path = str(path)
@@ -301,9 +306,9 @@ def process_file(word, excel, ppt, outlook, path):
         process_powerpoint(ppt, path, new_path, format, legacy_target_dir)
         return 1
         
-    #elif extension == 'msg':
-    #    process_outlook(outlook, path)
-    #    return 1
+    elif extension in outlook_filter:
+        process_outlook(outlook, path)
+        return 1
         
     elif process_malicious and extension in malicious_filter:
         #print (path)
