@@ -308,7 +308,6 @@ def process_file(word, excel, ppt, outlook, path):
         
     elif zipfile.is_zipfile(path):
         process_zip(path)
-
     return 0
     
  
