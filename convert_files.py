@@ -178,7 +178,7 @@ def process_outlook(outlook, source):
         handle_error(source)
         
 
-def process_zip(source):
+def process_zip(word, excel, ppt, outlook, source):
     try:
         zip = zipfile.ZipFile(source)
         
@@ -204,7 +204,7 @@ def process_zip(source):
         zip.close()
         for path in pathlib.Path(source[:-4]).rglob('*.*'):
             try:
-                file_count += process_file(word, excel, ppt, outlook, path)
+                process_file(word, excel, ppt, outlook, path)
             except Exception as e:
                 handle_error(source)
                 os.rmdir(source[-4])
@@ -323,7 +323,7 @@ def process_file(word, excel, ppt, outlook, path):
         os.remove(path)
         
     elif zipfile.is_zipfile(path):
-        process_zip(path)
+        process_zip(word, excel, ppt, outlook, path)
     return 0
     
  
