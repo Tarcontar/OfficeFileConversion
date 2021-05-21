@@ -6,6 +6,7 @@ import binascii
 import shutil
 import pythoncom
 import zipfile
+import time
 import win32com.client as win32
 from win32com.client import constants
 import win32com
@@ -213,7 +214,8 @@ def process_zip(word, excel, ppt, outlook, source):
                   
         os.remove(source)
         shutil.make_archive(target_path, 'zip', target_path)
-        #os.remove(target_path)
+        time.sleep(2)
+        os.remove(target_path)
 
     except Exception as e:
         print(e)
