@@ -213,7 +213,7 @@ def process_zip(word, excel, ppt, outlook, source):
                   
         os.remove(source)
         shutil.make_archive(target_path, 'zip', target_path)
-        shutils.rmtree(target_path)
+        shutil.rmtree(target_path)
 
     except Exception as e:
         print(e)
