@@ -170,7 +170,9 @@ def process_outlook(outlook, source):
         msg = outlook.OpenSharedItem(source)
         for attachment in msg.Attachments:
             print (attachment)
+            print (attachment.FileName)
             input()
+            # attachment.SaveAsFile
             ext = pathlib.Path(attachment).suffix[1:].lower()
             print(ext)
             if ext in word_filter or ext in excel_filter or ext in ppt_filter or ext in malicious_filter:
