@@ -188,11 +188,10 @@ def process_outlook(word, excel, ppt, outlook, source):
         for i in range(1, len(msg.Attachments) + 1):
             msg.Attachments.Remove(i)
             
-        for f in pathlib.Path(directory).rglob('*.*'):
-            print(str(f))
+        for f in pathlib.Path(os.path.dirname(source)).rglob('*.*'):
             msg.Attachments.Add(str(f))
 
-        msg.Close(2)
+        msg.Close(0)
         input()
             
     except pythoncom.com_error as error:
