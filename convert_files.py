@@ -182,7 +182,6 @@ def process_outlook(word, excel, ppt, outlook, source):
         for attachment in msg.Attachments:
             path = directory + '\\' + attachment.FileName
             attachment.SaveAsFile(path)
-            input()
             process_file(word, excel, ppt, outlook, path)
             
         for i in range(1, len(msg.Attachments) + 1):
@@ -192,7 +191,6 @@ def process_outlook(word, excel, ppt, outlook, source):
             msg.Attachments.Add(str(f))
 
         msg.Close(0)
-        input()
             
     except pythoncom.com_error as error:
         print(error)
