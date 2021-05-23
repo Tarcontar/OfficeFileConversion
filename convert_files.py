@@ -189,9 +189,8 @@ def process_outlook(word, excel, ppt, outlook, source):
              
         for path in pathlib.Path(directory).rglob('*.*'):
             msg.Attachments.Add(str(path), 1)
-            
-        #msg.SaveAs(source)
-        msg.Close()
+
+        msg.Close(0)
             
     except pythoncom.com_error as error:
         print(error)
