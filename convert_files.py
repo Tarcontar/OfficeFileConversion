@@ -163,26 +163,35 @@ def process_powerpoint(ppt, source, target, format, target_dir):
         handle_error(source)
         
         
-def process_outlook(outlook, source):
+def process_outlook(word, excel, ppt, outlook, source):
     try:
         if outlook is None:
             outlook = setup_outlook()
         msg = outlook.OpenSharedItem(source)
+        directory = os.path.dirname(source) + '\\tmp'
+        
+        for attachment in msg.Attachments:
+            attachment.SaveAsFile(directory + '\\' + attachment.FileName)
+            
+        input()    
+        count = 0
+        for path in pathlib.Path(directory).rglob('*.*'):
+            try:
+                count += process_file(word, excel, ppt, outlook, path)
+            except Exception as e:
+                handle_error(source)
+                shutil.rmtree(directory)
+                return
+                
+        print (count)
+        input()  
+        if count == 0:
+            return
+            
+        # TODO: remove all attachments and add the new ones
         #msg.Attachments.Remove(1) # 1 based
         #msg.Attachments.Add("C:\log.txt")
-        print(os.path.dirname(source))
-        for attachment in msg.Attachments:
-            print (attachment)
-            print (attachment.FileName)
-            input()
-            # attachment.SaveAsFile
-            ext = pathlib.Path(attachment).suffix[1:].lower()
-            print(ext)
-            if ext in word_filter or ext in excel_filter or ext in ppt_filter or ext in malicious_filter:
-                input()
-                msg.close()
-                handle_error(path)
-                return 0
+            
     except pythoncom.com_error as error:
         print(error)
         print('Exception occured -> outlook was closed')
@@ -308,7 +317,7 @@ def process_file(word, excel, ppt, outlook, path):
         return 1
         
     elif extension in outlook_filter:
-        process_outlook(outlook, path)
+        process_outlook(word, excel, ppt, outlook, path)
         return 1
         
     elif process_malicious and extension in malicious_filter:
