@@ -187,7 +187,7 @@ def process_outlook(word, excel, ppt, outlook, source):
         for i in range(1, len(msg.Attachments) + 1):
             msg.Attachments.Remove(i)
             
-        msg.Close()
+        msg.Close(0)
             
         msg = outlook.OpenSharedItem(source)
         
