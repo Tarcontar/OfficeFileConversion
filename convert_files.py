@@ -164,35 +164,32 @@ def process_powerpoint(ppt, source, target, format, target_dir):
         
         
 def process_outlook(word, excel, ppt, outlook, source):
+    directory = os.path.dirname(source) + '\\tmp'
     try:
         if outlook is None:
             outlook = setup_outlook()
         msg = outlook.OpenSharedItem(source)
-        directory = os.path.dirname(source) + '\\tmp'
-        os.mkdir(directory)
+        
+        if not msg.Attachments:
+            return
+        
+        try:
+            os.mkdir(directory)
+        except:
+            pass
         
         for attachment in msg.Attachments:
-            print(directory + '\\' + attachment.FileName)
             attachment.SaveAsFile(directory + '\\' + attachment.FileName)
-            
-        input()    
+             
         count = 0
         for path in pathlib.Path(directory).rglob('*.*'):
-            try:
-                count += process_file(word, excel, ppt, outlook, path)
-            except Exception as e:
-                handle_error(source)
-                shutil.rmtree(directory)
-                return
+            count += process_file(word, excel, ppt, outlook, path)
                 
-        print (count)
-        input()  
-        if count == 0:
-            return
-            
-        # TODO: remove all attachments and add the new ones
-        #msg.Attachments.Remove(1) # 1 based
-        #msg.Attachments.Add("C:\log.txt")
+        if count > 0:
+            for i in range(1, len(msg.Attachments) + 1):
+                msg.Attachments.Remove(i)
+            for path in pathlib.Path(directory).rglob('*.*'):
+                msg.Attachments.Add(path)
             
     except pythoncom.com_error as error:
         print(error)
@@ -201,6 +198,8 @@ def process_outlook(word, excel, ppt, outlook, source):
     except Exception as e:
         print(e)
         handle_error(source)
+        
+    shutil.rmtree(directory)
         
 
 def process_zip(word, excel, ppt, outlook, source):
