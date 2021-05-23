@@ -184,8 +184,8 @@ def process_outlook(word, excel, ppt, outlook, source):
             attachment.SaveAsFile(path)
             process_file(word, excel, ppt, outlook, path)
             
-        for i in range(1, len(msg.Attachments) + 1):
-            msg.Attachments.Remove(i)
+        #for i in range(1, len(msg.Attachments) + 1):
+        #    msg.Attachments.Remove(i)
             
         #for f in pathlib.Path(directory).rglob('*.*'):
         #    msg.Attachments.Add(str(f))
