@@ -168,6 +168,9 @@ def process_outlook(outlook, source):
         if outlook is None:
             outlook = setup_outlook()
         msg = outlook.OpenSharedItem(source)
+        #msg.Attachments.Remove(1) # 1 based
+        #msg.Attachments.Add("C:\log.txt")
+        print(os.path.dirname(source))
         for attachment in msg.Attachments:
             print (attachment)
             print (attachment.FileName)
