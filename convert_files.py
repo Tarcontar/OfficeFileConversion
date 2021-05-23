@@ -187,12 +187,14 @@ def process_outlook(word, excel, ppt, outlook, source):
         for i in range(1, len(msg.Attachments) + 1):
             msg.Attachments.Remove(i)
             
-        #for f in pathlib.Path(os.path.dirname(source)).rglob('*.*'):
-        #    msg.Attachments.Add(str(f))
+        msg.Close()
             
-        msg.Display(True)
-        input()
-
+        msg = outlook.OpenSharedItem(source)
+        
+        for f in pathlib.Path(directory).rglob('*.*'):
+            msg.Attachments.Add(str(f))
+            
+        msg.Attachments.Add('C:\\Users\\micha\\Desktop\\test.pdf')
         msg.Close(0)
             
     except pythoncom.com_error as error:
