@@ -171,6 +171,7 @@ def process_outlook(word, excel, ppt, outlook, source):
         directory = os.path.dirname(source) + '\\tmp'
         
         for attachment in msg.Attachments:
+            print(directory + '\\' + attachment.FileName)
             attachment.SaveAsFile(directory + '\\' + attachment.FileName)
             
         input()    
