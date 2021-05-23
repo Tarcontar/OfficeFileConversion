@@ -169,6 +169,7 @@ def process_outlook(word, excel, ppt, outlook, source):
             outlook = setup_outlook()
         msg = outlook.OpenSharedItem(source)
         directory = os.path.dirname(source) + '\\tmp'
+        os.makedir(directory)
         
         for attachment in msg.Attachments:
             print(directory + '\\' + attachment.FileName)
