@@ -184,12 +184,13 @@ def process_outlook(word, excel, ppt, outlook, source):
             attachment.SaveAsFile(path)
             process_file(word, excel, ppt, outlook, path)
             
-        #for i in range(1, len(msg.Attachments) + 1):
-        #    msg.Attachments.Remove(i)
+        for i in range(1, len(msg.Attachments) + 1):
+            msg.Attachments.Remove(i)
              
         for path in pathlib.Path(directory).rglob('*.*'):
-            print(path)
             msg.Attachments.Add(str(path), 1)
+            
+        msg.SaveAs(source)
             
     except pythoncom.com_error as error:
         print(error)
