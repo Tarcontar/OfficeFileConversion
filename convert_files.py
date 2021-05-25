@@ -15,9 +15,9 @@ from multiprocessing import Process
 process_malicious = True #if len(sys.argv) >= 3 and sys.argv[2] in ['True', 'true'] else False
 
 source = sys.argv[1]
-issue_target_dir = 'C:\\IF'
-legacy_target_dir = 'C:\\BF'
-logfile = open('C:\\log.txt', 'a')
+issue_target_dir = 'X:\\ZZ\\IF'
+legacy_target_dir = 'X:\\ZZ\\BF'
+logfile = open('X:\\ZZ\\log.txt', 'a')
 
 
 DOCX_FILE_FORMAT = 12
@@ -317,9 +317,9 @@ def process_file(word, excel, ppt, outlook, path):
         process_powerpoint(ppt, path, new_path, format, legacy_target_dir)
         return 1
         
-    elif extension in outlook_filter:
-        process_outlook(word, excel, ppt, outlook, path)
-        return 1
+    #elif extension in outlook_filter:
+    #    process_outlook(word, excel, ppt, outlook, path)
+    #    return 1
         
     elif process_malicious and extension in malicious_filter:
         #print (path)
@@ -360,11 +360,11 @@ if __name__ == "__main__":
         shutil.rmtree(python_temp)
         ppt = setup_ppt()
         
-    try:
-        outlook = setup_outlook()
-    except AttributeError:
-        shutil.rmtree(python_temp)
-        outlook = setup_outlook()
+    #try:
+    #    outlook = setup_outlook()
+    #except AttributeError:
+    #    shutil.rmtree(python_temp)
+    #    outlook = setup_outlook()
     
     for path in pathlib.Path(source).rglob('*.*'):
         try:
@@ -400,10 +400,10 @@ if __name__ == "__main__":
     except:
         pass
         
-    try:     
-        outlook.Quit()
-    except:
-        pass
+    #try:     
+    #    outlook.Quit()
+    #except:
+    #    pass
 
     logfile.close()
     print(f'converted {file_count} files')
