@@ -38,7 +38,7 @@ word_filter = ['docx', 'doc', 'docm', 'dotx', 'dot', 'dotm', 'odt']
 excel_filter = ['xlsx', 'xls', 'xlsm', 'xlsb', 'xltx', 'xlt', 'xltm', 'ods']
 ppt_filter = ['pptx', 'ppt', 'pptm', 'potx', 'pot', 'potm', 'ppsx', 'pps', 'ppsm', 'odp']
 outlook_filter = ['msg']
-malicious_filter = ['xlam', 'osd', 'py', 'exe', 'msi', 'bat', 'lnk', 'reg', 'pol', 'ps1', 'psm1', 'psd1', 'ps1xml', 'pssc', 'psrc', 'cdxml']
+malicious_filter = ['xlam', 'osd', 'py', 'exe', 'msi', 'bat', 'reg', 'pol', 'ps1', 'psm1', 'psd1', 'ps1xml', 'pssc', 'psrc', 'cdxml']
 
 print(f'processing all {word_filter} files in \'{source}\'')
 print(f'processing all {excel_filter} files in \'{source}\'')
@@ -360,11 +360,11 @@ if __name__ == "__main__":
         shutil.rmtree(python_temp)
         ppt = setup_ppt()
         
-    #try:
-    #    outlook = setup_outlook()
-    #except AttributeError:
-    #    shutil.rmtree(python_temp)
-    #    outlook = setup_outlook()
+    try:
+        outlook = setup_outlook()
+    except AttributeError:
+        shutil.rmtree(python_temp)
+        outlook = setup_outlook()
     
     for path in pathlib.Path(source).rglob('*.*'):
         try:
@@ -400,10 +400,10 @@ if __name__ == "__main__":
     except:
         pass
         
-    #try:     
-    #    outlook.Quit()
-    #except:
-    #    pass
+    try:     
+        outlook.Quit()
+    except:
+        pass
 
     logfile.close()
     print(f'converted {file_count} files')
