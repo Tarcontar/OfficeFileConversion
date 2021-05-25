@@ -38,7 +38,7 @@ word_filter = ['docx', 'doc', 'docm', 'dotx', 'dot', 'dotm', 'odt']
 excel_filter = ['xlsx', 'xls', 'xlsm', 'xlsb', 'xltx', 'xlt', 'xltm', 'ods']
 ppt_filter = ['pptx', 'ppt', 'pptm', 'potx', 'pot', 'potm', 'ppsx', 'pps', 'ppsm', 'odp']
 outlook_filter = ['msg']
-malicious_filter = ['xlam', 'osd', 'py', 'exe', 'msi', 'bat', 'reg', 'pol', 'ps1', 'psm1', 'psd1', 'ps1xml', 'pssc', 'psrc', 'cdxml']
+malicious_filter = ['msg', 'xlam', 'osd', 'py', 'exe', 'msi', 'bat', 'reg', 'pol', 'ps1', 'psm1', 'psd1', 'ps1xml', 'pssc', 'psrc', 'cdxml']
 
 print(f'processing all {word_filter} files in \'{source}\'')
 print(f'processing all {excel_filter} files in \'{source}\'')
@@ -164,7 +164,7 @@ def process_powerpoint(ppt, source, target, format, target_dir):
         
         
 def process_outlook(word, excel, ppt, outlook, source):
-    directory = os.path.dirname(source) + '\\tmp'
+    directory = os.path.dirname(source) + '\\_tmp'
     try:
         if outlook is None:
             outlook = setup_outlook()
@@ -213,7 +213,7 @@ def process_zip(word, excel, ppt, outlook, source):
                 handle_error(source)
                 return 0
             
-        target_path = source[:-4]
+        target_path = os.path.dirname(source) + '\\_tmp'
         zip.extractall(target_path)
         zip.close()
             
