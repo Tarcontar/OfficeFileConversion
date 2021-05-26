@@ -213,7 +213,7 @@ def process_zip(word, excel, ppt, outlook, source):
                 handle_error(source)
                 return 0
             
-        target_path = os.path.dirname(source) + '\\_tmp'
+        target_path = source[:-4]
         zip.extractall(target_path)
         zip.close()
             
