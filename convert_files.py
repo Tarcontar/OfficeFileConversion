@@ -121,7 +121,9 @@ def process_word(word, source, target, format, target_dir):
             return
         print(e)
     except pythoncom.com_error as error:
-        if (error.args[0] != -2147352567:
+        if error.args[0] == -2147352567:
+            print('-> file is password protected')
+        else:
             print(error)
     except Exception as e:
         print(e)
@@ -146,7 +148,9 @@ def process_excel(excel, source, target, format, target_dir):
             return
         print(e)
     except pythoncom.com_error as error:
-        if (error.args[0] != -2147352567:
+        if error.args[0] == -2147352567:
+            print('-> file is password protected')
+        else:
             print(error)
     except Exception as e:
         print(e)
@@ -169,7 +173,9 @@ def process_powerpoint(ppt, source, target, format, target_dir):
             return
         print(e)
     except pythoncom.com_error as error:
-        if (error.args[0] != -2147352567:
+        if error.args[0] == -2147352567:
+            print('-> file is password protected')
+        else:
             print(error)
     except Exception as e:
         print(e)
