@@ -184,9 +184,7 @@ def process_outlook(word, excel, ppt, outlook, source):
             
         tmp_file = issue_target_dir + source[2:]
         copy_file(source, tmp_file) # TODO: only workaround for outlook not closing file properly
-        print('trying to delete')
         os.remove(source)
-        print('deleted')
         msg = outlook.OpenSharedItem(tmp_file)
         
         html_path = source[:-4] + '.html'
@@ -208,12 +206,10 @@ def process_outlook(word, excel, ppt, outlook, source):
             count += process_file(word, excel, ppt, outlook, path)
         
         msg.Close(1)  
-        input()
         return
             
     except WindowsError as e:
         if e.winerror == ACCESS_DENIED:
-            print(e)
             return
         print(e)
     except pythoncom.com_error as error:
