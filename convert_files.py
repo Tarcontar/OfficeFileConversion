@@ -9,15 +9,18 @@ import zipfile
 import win32com.client as win32
 from win32com.client import constants
 import win32com
+import queue
+from time import sleep
 from multiprocessing import Process
-
 
 process_malicious = True #if len(sys.argv) >= 3 and sys.argv[2] in ['True', 'true'] else False
 
 source = sys.argv[1]
-issue_target_dir = 'C:\\IF'
-legacy_target_dir = 'C:\\BF'
-logfile = open('C:\\log.txt', 'a')
+issue_target_dir = 'X:\\ZZ\\IF'
+legacy_target_dir = 'X:\\ZZ\\BF'
+logfile = open('X:\\ZZ\\log.txt', 'a')
+
+ACCESS_DENIED = 5
 
 
 DOCX_FILE_FORMAT = 12
@@ -38,7 +41,8 @@ word_filter = ['docx', 'doc', 'docm', 'dotx', 'dot', 'dotm', 'odt']
 excel_filter = ['xlsx', 'xls', 'xlsm', 'xlsb', 'xltx', 'xlt', 'xltm', 'ods']
 ppt_filter = ['pptx', 'ppt', 'pptm', 'potx', 'pot', 'potm', 'ppsx', 'pps', 'ppsm', 'odp']
 outlook_filter = ['msg']
-malicious_filter = ['xlam', 'osd', 'py', 'exe', 'msi', 'bat', 'lnk', 'reg', 'pol', 'ps1', 'psm1', 'psd1', 'ps1xml', 'pssc', 'psrc', 'cdxml']
+archive_filter = ['zip', 'rar', '7z']
+malicious_filter = ['pst', 'xlam', 'osd', 'py', 'exe', 'msi', 'bat', 'reg', 'pol', 'ps1', 'psm1', 'psd1', 'ps1xml', 'pssc', 'psrc', 'cdxml']
 
 print(f'processing all {word_filter} files in \'{source}\'')
 print(f'processing all {excel_filter} files in \'{source}\'')
@@ -114,15 +118,19 @@ def process_word(word, source, target, format, target_dir):
         doc.Activate()
         word.ActiveDocument.SaveAs(target, format)
         doc.Close(False)
-        #copy_file(source, target_dir + source[2:])
         os.remove(source)
+        return
+    except WindowsError as e:
+        if e.winerror == ACCESS_DENIED:
+            return
+        print(e)
     except pythoncom.com_error as error:
         print(error)
-        print('Exception occured -> word was closed')
-        handle_error(source)
     except Exception as e:
         print(e)
-        handle_error(source)
+        
+    handle_error(source)
+    print('Exception occured with word')
     
     
 def process_excel(excel, source, target, format, target_dir):
@@ -134,15 +142,19 @@ def process_excel(excel, source, target, format, target_dir):
         wb.Application.EnableEvents = False
         wb.SaveAs(target, FileFormat=format, ConflictResolution=2)
         wb.Close()
-        #copy_file(source, target_dir + source[2:])
         os.remove(source)
+        return
+    except WindowsError as e:
+        if e.winerror == ACCESS_DENIED:
+            return
+        print(e)
     except pythoncom.com_error as error:
         print(error)
-        print('Exception occured -> excel was closed')
-        handle_error(source)
     except Exception as e:
         print(e)
-        handle_error(source)
+        
+    print('Exception occured in excel')
+    handle_error(source)
     
     
 def process_powerpoint(ppt, source, target, format, target_dir):
@@ -152,56 +164,78 @@ def process_powerpoint(ppt, source, target, format, target_dir):
         presentation = ppt.Presentations.Open(source + ':::', WithWindow=False)
         presentation.SaveAs(target, format)
         presentation.Close()
-        #copy_file(source, target_dir + source[2:])
         os.remove(source)
+        return
+    except WindowsError as e:
+        if e.winerror == ACCESS_DENIED:
+            return
+        print(e)
     except pythoncom.com_error as error:
         print(error)
-        print('Exception occured -> powerpoint was closed')
-        handle_error(source)
     except Exception as e:
         print(e)
-        handle_error(source)
+
+    print('Exception occured in powerpoint')
+    handle_error(source)
         
         
 def process_outlook(word, excel, ppt, outlook, source):
-    directory = os.path.dirname(source) + '\\tmp'
     try:
         if outlook is None:
             outlook = setup_outlook()
-        msg = outlook.OpenSharedItem(source)
-        #msg.Display(False)
+ 
+        tmp_file = issue_target_dir + source[2:]
+        copy_file(source, tmp_file) # TODO: only workaround for outlook not closing file properly
+        os.remove(source)
+        msg = outlook.OpenSharedItem(tmp_file)
+        
+        html_path = source[:-4] + '.html'
+        msg.SaveAs(html_path, constants.olHTML)
+        doc = word.Documents.Open(html_path)
+        doc.ExportAsFixedFormat(source[:-4] + '.pdf', 17)
+        doc.Close(False)
+        os.remove(html_path)
+        shutil.rmtree(source[:-4] + '_files')
         
         if not msg.Attachments:
             return
         
-        try:
-            os.mkdir(directory)
-        except:
-            pass
-        
+        count = 0
         for attachment in msg.Attachments:
-            path = directory + '\\' + attachment.FileName
+            path = source[:-3] + attachment.FileName
+            print(attachment.FileName)
             attachment.SaveAsFile(path)
-            process_file(word, excel, ppt, outlook, path)
+            count += process_file(word, excel, ppt, outlook, path)
+        
+        msg.Close(1)  
+        return
             
-        for i in range(1, len(msg.Attachments) + 1):
-            msg.Attachments.Remove(i)
-            
-        for f in pathlib.Path(directory).rglob('*.*'):
-            msg.Attachments.Add(str(f))
-            
-        msg.Close(0)
-            
+    except WindowsError as e:
+        if e.winerror == ACCESS_DENIED:
+            return
+        print(e)
     except pythoncom.com_error as error:
         print(error)
-        print('Exception occured -> outlook was closed')
-        handle_error(source)
     except Exception as e:
         print(e)
-        handle_error(source)
         
-    shutil.rmtree(directory)
+    print('Exception occured in outlook')
+    handle_error(source) 
         
+        
+zipping_queue = queue.Queue()
+do_zipping = True
+
+def zipping_worker():
+    while do_zipping:
+        if zipping_queue.empty():
+            sleep(1)
+            continue
+            
+        path = zipping_queue.get()
+        shutil.make_archive(path, 'zip', path)
+        shutil.rmtree(path)
+
 
 def process_zip(word, excel, ppt, outlook, source):
     try:
@@ -213,6 +247,20 @@ def process_zip(word, excel, ppt, outlook, source):
                 zip.close()
                 handle_error(source)
                 return 0
+                
+        needs_processing = False
+        for file in zip.namelist():
+            extension = pathlib.Path(file).suffix[1:].lower()
+            
+            if extension in word_filter or extension in excel_filter \
+                or extension in ppt_filter or extension in outlook_filter \
+                    or extension in malicious_filter or extension in archive_filter:
+                if not extension in ['docx', 'dotx', 'xlsx', 'xltx', 'pptx', 'potx', 'ppsx']:
+                    needs_processing = True
+                    break
+            
+        if not needs_processing:
+            return 1
             
         target_path = source[:-4]
         zip.extractall(target_path)
@@ -228,10 +276,14 @@ def process_zip(word, excel, ppt, outlook, source):
                 return
                   
         os.remove(source)
-        shutil.make_archive(target_path, 'zip', target_path)
-        shutil.rmtree(target_path)
+        zipping_queue.put(target_path)
         return count
 
+    except WindowsError as e:
+        if e.winerror == ACCESS_DENIED:
+            return
+        print(e)
+        
     except Exception as e:
         print(e)
         handle_error(source)
@@ -333,7 +385,7 @@ def process_file(word, excel, ppt, outlook, path):
         copy_file(path, issue_target_dir + path[2:])
         os.remove(path)
         
-    elif zipfile.is_zipfile(path):
+    elif extension in archive_filter and zipfile.is_zipfile(path):
         return process_zip(word, excel, ppt, outlook, path)
     return 0
     
@@ -366,6 +418,11 @@ if __name__ == "__main__":
     except AttributeError:
         shutil.rmtree(python_temp)
         outlook = setup_outlook()
+        
+        
+    zipping_workers = []
+    for i in range(0, 10):
+        zipping_workers.add(start_process(zipping_worker))
     
     for path in pathlib.Path(source).rglob('*.*'):
         try:
@@ -380,7 +437,7 @@ if __name__ == "__main__":
             print(error_msg)
             logfile.write(error_msg)
             print('press any key to continue...')
-            input()
+            #input()
             try:
                 os.remove(path)
             except:
@@ -405,6 +462,14 @@ if __name__ == "__main__":
         outlook.Quit()
     except:
         pass
+        
+    while not zipping_queue.empty():
+        sleep(5)
+      
+    do_zipping = False
+    
+    for zipping_worker in zipping_workers:
+        zipping_worker.join()
 
     logfile.close()
     print(f'converted {file_count} files')
