@@ -116,7 +116,6 @@ def process_word(word, source, target, format, target_dir):
         doc.Activate()
         word.ActiveDocument.SaveAs(target, format)
         doc.Close(False)
-        #copy_file(source, target_dir + source[2:])
         os.remove(source)
         return
     except WindowsError as e:
@@ -141,7 +140,6 @@ def process_excel(excel, source, target, format, target_dir):
         wb.Application.EnableEvents = False
         wb.SaveAs(target, FileFormat=format, ConflictResolution=2)
         wb.Close()
-        #copy_file(source, target_dir + source[2:])
         os.remove(source)
         return
     except WindowsError as e:
@@ -164,7 +162,6 @@ def process_powerpoint(ppt, source, target, format, target_dir):
         presentation = ppt.Presentations.Open(source + ':::', WithWindow=False)
         presentation.SaveAs(target, format)
         presentation.Close()
-        #copy_file(source, target_dir + source[2:])
         os.remove(source)
         return
     except WindowsError as e:
@@ -184,7 +181,11 @@ def process_outlook(word, excel, ppt, outlook, source):
     try:
         if outlook is None:
             outlook = setup_outlook()
-        msg = outlook.OpenSharedItem(source)
+            
+        tmp_file = issue_target_dir + path[2:]
+        copy_file(source, tmp_file) # TODO: only workaround for outlook not closing file properly
+        os.remove(source)
+        msg = outlook.OpenSharedItem(tmp_file)
         
         html_path = source[:-4] + '.html'
         msg.SaveAs(html_path, constants.olHTML)
@@ -203,7 +204,6 @@ def process_outlook(word, excel, ppt, outlook, source):
             count += process_file(word, excel, ppt, outlook, path)
         
         msg.Close(1)  
-        outlook.Application.Quit()
         os.remove(source)
         return
             
