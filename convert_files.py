@@ -16,9 +16,9 @@ from multiprocessing import Process
 process_malicious = True #if len(sys.argv) >= 3 and sys.argv[2] in ['True', 'true'] else False
 
 source = sys.argv[1]
-issue_target_dir = 'X:\\ZZ\\IF'
-legacy_target_dir = 'X:\\ZZ\\BF'
-logfile = open('X:\\ZZ\\log.txt', 'a')
+issue_target_dir = 'C:\\IF'
+legacy_target_dir = 'C:\\BF'
+logfile = open('C:\\log.txt', 'a')
 
 ACCESS_DENIED = 5
 
