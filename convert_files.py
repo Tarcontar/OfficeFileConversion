@@ -195,6 +195,7 @@ def process_outlook(word, excel, ppt, outlook, source):
         doc.ExportAsFixedFormat(source[:-4] + '.pdf', 17)
         doc.Close(False)
         os.remove(html_path)
+        shutil.rmtree(source[:-4] + '_files')
         
         if not msg.Attachments:
             return
