@@ -9,7 +9,6 @@ import zipfile
 import win32com.client as win32
 from win32com.client import constants
 import win32com
-from multiprocessing import Process
 
 
 process_malicious = True #if len(sys.argv) >= 3 and sys.argv[2] in ['True', 'true'] else False
@@ -18,6 +17,8 @@ source = sys.argv[1]
 issue_target_dir = 'X:\\ZZ\\IF'
 legacy_target_dir = 'X:\\ZZ\\BF'
 logfile = open('X:\\ZZ\\log.txt', 'a')
+
+ACCESS_DENIED = 5
 
 
 DOCX_FILE_FORMAT = 12
@@ -39,7 +40,7 @@ excel_filter = ['xlsx', 'xls', 'xlsm', 'xlsb', 'xltx', 'xlt', 'xltm', 'ods']
 ppt_filter = ['pptx', 'ppt', 'pptm', 'potx', 'pot', 'potm', 'ppsx', 'pps', 'ppsm', 'odp']
 outlook_filter = ['msg']
 archive_filter = ['zip', 'rar', '7z']
-malicious_filter = ['msg', 'xlam', 'osd', 'py', 'exe', 'msi', 'bat', 'reg', 'pol', 'ps1', 'psm1', 'psd1', 'ps1xml', 'pssc', 'psrc', 'cdxml']
+malicious_filter = ['msg', 'pst', 'xlam', 'osd', 'py', 'exe', 'msi', 'bat', 'reg', 'pol', 'ps1', 'psm1', 'psd1', 'ps1xml', 'pssc', 'psrc', 'cdxml']
 
 print(f'processing all {word_filter} files in \'{source}\'')
 print(f'processing all {excel_filter} files in \'{source}\'')
@@ -117,13 +118,18 @@ def process_word(word, source, target, format, target_dir):
         doc.Close(False)
         #copy_file(source, target_dir + source[2:])
         os.remove(source)
+        return
+    except WindowsError as e:
+        if e.winerror == ACCESS_DENIED:
+            return
+        print(e)
     except pythoncom.com_error as error:
         print(error)
-        print('Exception occured -> word was closed')
-        handle_error(source)
     except Exception as e:
         print(e)
-        handle_error(source)
+        
+    handle_error(source)
+    print('Exception occured with word')
     
     
 def process_excel(excel, source, target, format, target_dir):
@@ -137,13 +143,18 @@ def process_excel(excel, source, target, format, target_dir):
         wb.Close()
         #copy_file(source, target_dir + source[2:])
         os.remove(source)
+        return
+    except WindowsError as e:
+        if e.winerror == ACCESS_DENIED:
+            return
+        print(e)
     except pythoncom.com_error as error:
         print(error)
-        print('Exception occured -> excel was closed')
-        handle_error(source)
     except Exception as e:
         print(e)
-        handle_error(source)
+        
+    print('Exception occured in excel')
+    handle_error(source)
     
     
 def process_powerpoint(ppt, source, target, format, target_dir):
@@ -155,13 +166,18 @@ def process_powerpoint(ppt, source, target, format, target_dir):
         presentation.Close()
         #copy_file(source, target_dir + source[2:])
         os.remove(source)
+        return
+    except WindowsError as e:
+        if e.winerror == ACCESS_DENIED:
+            return
+        print(e)
     except pythoncom.com_error as error:
         print(error)
-        print('Exception occured -> powerpoint was closed')
-        handle_error(source)
     except Exception as e:
         print(e)
-        handle_error(source)
+
+    print('Exception occured in powerpoint')
+    handle_error(source)
         
         
 def process_outlook(word, excel, ppt, outlook, source):
@@ -170,6 +186,8 @@ def process_outlook(word, excel, ppt, outlook, source):
         if outlook is None:
             outlook = setup_outlook()
         msg = outlook.OpenSharedItem(source)
+        
+        #msg.ExportAsFixedFormat folderPath & fileName & ".pdf", 17
         
         if not msg.Attachments:
             return
@@ -191,15 +209,21 @@ def process_outlook(word, excel, ppt, outlook, source):
                 msg.Attachments.Remove(i)
             for path in pathlib.Path(directory).rglob('*.*'):
                 msg.Attachments.Add(path)
+          
+        shutil.rmtree(directory)
+        return
             
+    except WindowsError as e:
+        if e.winerror == ACCESS_DENIED:
+            return
+        print(e)
     except pythoncom.com_error as error:
         print(error)
-        print('Exception occured -> outlook was closed')
-        handle_error(source)
     except Exception as e:
         print(e)
-        handle_error(source)
         
+    print('Exception occured in outlook')
+    handle_error(source) 
     shutil.rmtree(directory)
         
 
@@ -213,6 +237,25 @@ def process_zip(word, excel, ppt, outlook, source):
                 zip.close()
                 handle_error(source)
                 return 0
+                
+        # TODO: scan files in zip first
+        needs_processing = False
+        for file in zip.namelist():
+            print (file)
+            extension = pathlib.Path(file).suffix[1:].lower()
+            print(extension)
+            
+            if extension in word_filter or extension in excel_filter \
+                or extension in ppt_filter or extension in outlook_filter \
+                    or extension in malicious_filter or extension in archive_filter:
+                if not extension in ['docx', 'dotx', 'xlsx', 'xltx', 'pptx', 'potx', 'ppsx']:
+                    needs_processing = True
+                    break
+            
+        print(needs_processing)
+        input()
+        if not needs_processing:
+            return 1
             
         target_path = source[:-4]
         zip.extractall(target_path)
@@ -232,6 +275,11 @@ def process_zip(word, excel, ppt, outlook, source):
         shutil.rmtree(target_path)
         return count
 
+    except WindowsError as e:
+        if e.winerror == ACCESS_DENIED:
+            return
+        print(e)
+        
     except Exception as e:
         print(e)
         handle_error(source)
