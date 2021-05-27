@@ -194,18 +194,20 @@ def process_outlook(word, excel, ppt, outlook, source):
         doc = word.Documents.Open(html_path)
         doc.ExportAsFixedFormat(source[:-4] + '.pdf', 17)
         doc.Close(False)
+        os.remove(html_path)
         
         if not msg.Attachments:
-            os.remove(source)
             return
         
         count = 0
         for attachment in msg.Attachments:
             path = source[:-3] + attachment.FileName
+            print(attachment.FileName)
             attachment.SaveAsFile(path)
             count += process_file(word, excel, ppt, outlook, path)
         
         msg.Close(1)  
+        input()
         return
             
     except WindowsError as e:
