@@ -40,7 +40,7 @@ excel_filter = ['xlsx', 'xls', 'xlsm', 'xlsb', 'xltx', 'xlt', 'xltm', 'ods']
 ppt_filter = ['pptx', 'ppt', 'pptm', 'potx', 'pot', 'potm', 'ppsx', 'pps', 'ppsm', 'odp']
 outlook_filter = ['msg']
 archive_filter = ['zip', 'rar', '7z']
-malicious_filter = ['msg', 'pst', 'xlam', 'osd', 'py', 'exe', 'msi', 'bat', 'reg', 'pol', 'ps1', 'psm1', 'psd1', 'ps1xml', 'pssc', 'psrc', 'cdxml']
+malicious_filter = ['pst', 'xlam', 'osd', 'py', 'exe', 'msi', 'bat', 'reg', 'pol', 'ps1', 'psm1', 'psd1', 'ps1xml', 'pssc', 'psrc', 'cdxml']
 
 print(f'processing all {word_filter} files in \'{source}\'')
 print(f'processing all {excel_filter} files in \'{source}\'')
@@ -185,6 +185,7 @@ def process_outlook(word, excel, ppt, outlook, source):
         if outlook is None:
             outlook = setup_outlook()
         msg = outlook.OpenSharedItem(source)
+        print(source)
         msg.ExportAsFixedFormat(2, source[:-4])
         
         if not msg.Attachments:
@@ -211,6 +212,7 @@ def process_outlook(word, excel, ppt, outlook, source):
             
     except WindowsError as e:
         if e.winerror == ACCESS_DENIED:
+            print(e)
             return
         print(e)
     except pythoncom.com_error as error:
@@ -236,9 +238,7 @@ def process_zip(word, excel, ppt, outlook, source):
                 
         needs_processing = False
         for file in zip.namelist():
-            print (file)
             extension = pathlib.Path(file).suffix[1:].lower()
-            print(extension)
             
             if extension in word_filter or extension in excel_filter \
                 or extension in ppt_filter or extension in outlook_filter \
@@ -359,9 +359,9 @@ def process_file(word, excel, ppt, outlook, path):
         process_powerpoint(ppt, path, new_path, format, legacy_target_dir)
         return 1
         
-    #elif extension in outlook_filter:
-    #    process_outlook(word, excel, ppt, outlook, path)
-    #    return 1
+    elif extension in outlook_filter:
+        process_outlook(word, excel, ppt, outlook, path)
+        return 1
         
     elif process_malicious and extension in malicious_filter:
         #print (path)
