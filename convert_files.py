@@ -12,6 +12,7 @@ import win32com
 import queue
 from time import sleep
 from multiprocessing import Process
+import threading
 
 process_malicious = True #if len(sys.argv) >= 3 and sys.argv[2] in ['True', 'true'] else False
 
@@ -389,12 +390,6 @@ def process_file(word, excel, ppt, outlook, path):
         return process_zip(word, excel, ppt, outlook, path)
     return 0
     
-    
-def start_process(target_func):
-    worker = Process(target=target_func)
-    worker.start()
-    return worker
-    
  
 if __name__ == "__main__":
     print(f'Processing folder: {source}')
@@ -428,7 +423,10 @@ if __name__ == "__main__":
         
     zipping_workers = []
     for i in range(0, 10):
-        zipping_workers.append(start_process(zipping_worker))
+        thread = threading.Thread(target=zipping_worker, args=())
+        thread.daemon = True
+        thread.start()
+        zipping_workers.append(thread)
     
     for path in pathlib.Path(source).rglob('*.*'):
         try:
