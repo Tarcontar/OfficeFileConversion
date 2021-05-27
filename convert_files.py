@@ -121,7 +121,8 @@ def process_word(word, source, target, format, target_dir):
             return
         print(e)
     except pythoncom.com_error as error:
-        print(error)
+        if (error.args[0] != -2147352567:
+            print(error)
     except Exception as e:
         print(e)
         
@@ -145,9 +146,9 @@ def process_excel(excel, source, target, format, target_dir):
             return
         print(e)
     except pythoncom.com_error as error:
-        print(error)
+        if (error.args[0] != -2147352567:
+            print(error)
     except Exception as e:
-        print(e.args)
         print(e)
         
     print('Exception occured in excel')
@@ -168,7 +169,8 @@ def process_powerpoint(ppt, source, target, format, target_dir):
             return
         print(e)
     except pythoncom.com_error as error:
-        print(error)
+        if (error.args[0] != -2147352567:
+            print(error)
     except Exception as e:
         print(e)
 
