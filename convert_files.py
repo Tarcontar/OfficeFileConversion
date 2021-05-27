@@ -38,6 +38,7 @@ word_filter = ['docx', 'doc', 'docm', 'dotx', 'dot', 'dotm', 'odt']
 excel_filter = ['xlsx', 'xls', 'xlsm', 'xlsb', 'xltx', 'xlt', 'xltm', 'ods']
 ppt_filter = ['pptx', 'ppt', 'pptm', 'potx', 'pot', 'potm', 'ppsx', 'pps', 'ppsm', 'odp']
 outlook_filter = ['msg']
+archive_filter = ['zip', 'rar', '7z']
 malicious_filter = ['msg', 'xlam', 'osd', 'py', 'exe', 'msi', 'bat', 'reg', 'pol', 'ps1', 'psm1', 'psd1', 'ps1xml', 'pssc', 'psrc', 'cdxml']
 
 print(f'processing all {word_filter} files in \'{source}\'')
@@ -332,7 +333,7 @@ def process_file(word, excel, ppt, outlook, path):
         copy_file(path, issue_target_dir + path[2:])
         os.remove(path)
         
-    elif zipfile.is_zipfile(path):
+    elif extension in archive_filter and zipfile.is_zipfile(path):
         return process_zip(word, excel, ppt, outlook, path)
     return 0
     
