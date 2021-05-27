@@ -185,7 +185,12 @@ def process_outlook(word, excel, ppt, outlook, source):
         if outlook is None:
             outlook = setup_outlook()
         msg = outlook.OpenSharedItem(source)
-        msg.SaveAs(source[:-4] + '.html', constants.olHTML)
+        
+        html_path = source[:-4] + '.html'
+        msg.SaveAs(html_path, constants.olHTML)
+        doc = word.Documents.Open(html_path)
+        doc.ExportAsFixedFormat(source[:-4] + '.pdf', 17)
+        doc.Close(False)
         
         if not msg.Attachments:
             os.remove(source)
