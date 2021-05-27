@@ -182,7 +182,7 @@ def process_outlook(word, excel, ppt, outlook, source):
         if outlook is None:
             outlook = setup_outlook()
             
-        tmp_file = issue_target_dir + path[2:]
+        tmp_file = issue_target_dir + source[2:]
         copy_file(source, tmp_file) # TODO: only workaround for outlook not closing file properly
         os.remove(source)
         msg = outlook.OpenSharedItem(tmp_file)
