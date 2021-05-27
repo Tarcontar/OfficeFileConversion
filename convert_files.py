@@ -186,7 +186,8 @@ def process_outlook(word, excel, ppt, outlook, source):
             outlook = setup_outlook()
         msg = outlook.OpenSharedItem(source)
         print(source)
-        msg.ExportAsFixedFormat(2, source[:-4])
+        #msg.ExportAsFixedFormat(2, source[:-4])
+        msg.PrintOut()
         
         if not msg.Attachments:
             os.remove(source)
