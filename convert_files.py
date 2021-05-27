@@ -185,29 +185,19 @@ def process_outlook(word, excel, ppt, outlook, source):
         if outlook is None:
             outlook = setup_outlook()
         msg = outlook.OpenSharedItem(source)
-        print(source)
-        #msg.ExportAsFixedFormat(2, source[:-4])
-        #msg.PrintOut()
-        msg.SaveAs(source[:-4], constants.olHTML)
+        msg.SaveAs(source[:-4] + '.html', constants.olHTML)
         
         if not msg.Attachments:
             os.remove(source)
             return
         
-        directory = source[:-4]
-        try:
-            os.mkdir(directory)
-        except:
-            pass
-        
-        for attachment in msg.Attachments:
-            attachment.SaveAsFile(directory + '\\' + attachment.FileName)
-             
         count = 0
-        for path in pathlib.Path(directory).rglob('*.*'):
+        for attachment in msg.Attachments:
+            path = source[:-3] + attachment.FileName
+            attachment.SaveAsFile(path)
             count += process_file(word, excel, ppt, outlook, path)
-                
-        msg.Close(1)
+        
+        msg.Close(1)  
         os.remove(source)
         shutil.rmtree(directory)
         return
