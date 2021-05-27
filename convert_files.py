@@ -258,8 +258,8 @@ def process_zip(word, excel, ppt, outlook, source):
                 return
                   
         os.remove(source)
-        shutil.make_archive(path, 'zip', path)
-        shutil.rmtree(path)
+        shutil.make_archive(target_path, 'zip', target_path)
+        shutil.rmtree(target_path)
         return count
 
     except WindowsError as e:
