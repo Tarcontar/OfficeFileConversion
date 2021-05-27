@@ -197,7 +197,8 @@ def process_outlook(word, excel, ppt, outlook, source):
             attachment.SaveAsFile(path)
             count += process_file(word, excel, ppt, outlook, path)
         
-        #msg.Close(1)  
+        msg.Close(1)  
+        outlook.Application.Quit()
         os.remove(source)
         return
             
