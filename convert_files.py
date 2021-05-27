@@ -197,9 +197,8 @@ def process_outlook(word, excel, ppt, outlook, source):
             attachment.SaveAsFile(path)
             count += process_file(word, excel, ppt, outlook, path)
         
-        msg.Close(1)  
+        #msg.Close(1)  
         os.remove(source)
-        shutil.rmtree(directory)
         return
             
     except WindowsError as e:
@@ -214,7 +213,6 @@ def process_outlook(word, excel, ppt, outlook, source):
         
     print('Exception occured in outlook')
     handle_error(source) 
-    shutil.rmtree(directory)
         
 
 def process_zip(word, excel, ppt, outlook, source):
