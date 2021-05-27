@@ -181,17 +181,17 @@ def process_powerpoint(ppt, source, target, format, target_dir):
         
         
 def process_outlook(word, excel, ppt, outlook, source):
-    directory = os.path.dirname(source) + '\\_tmp'
     try:
         if outlook is None:
             outlook = setup_outlook()
         msg = outlook.OpenSharedItem(source)
-        
-        #msg.ExportAsFixedFormat folderPath & fileName & ".pdf", 17
+        msg.ExportAsFixedFormat(2, source[:-4])
         
         if not msg.Attachments:
+            os.remove(source)
             return
         
+        directory = source[:-4]
         try:
             os.mkdir(directory)
         except:
@@ -204,12 +204,8 @@ def process_outlook(word, excel, ppt, outlook, source):
         for path in pathlib.Path(directory).rglob('*.*'):
             count += process_file(word, excel, ppt, outlook, path)
                 
-        if count > 0:
-            for i in range(1, len(msg.Attachments) + 1):
-                msg.Attachments.Remove(i)
-            for path in pathlib.Path(directory).rglob('*.*'):
-                msg.Attachments.Add(path)
-          
+        msg.Close(1)
+        os.remove(source)
         shutil.rmtree(directory)
         return
             
@@ -238,7 +234,6 @@ def process_zip(word, excel, ppt, outlook, source):
                 handle_error(source)
                 return 0
                 
-        # TODO: scan files in zip first
         needs_processing = False
         for file in zip.namelist():
             print (file)
@@ -252,8 +247,6 @@ def process_zip(word, excel, ppt, outlook, source):
                     needs_processing = True
                     break
             
-        print(needs_processing)
-        input()
         if not needs_processing:
             return 1
             
