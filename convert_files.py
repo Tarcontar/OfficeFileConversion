@@ -9,7 +9,9 @@ import zipfile
 import win32com.client as win32
 from win32com.client import constants
 import win32com
-
+import queue
+from time import sleep
+from multiprocessing import Process
 
 process_malicious = True #if len(sys.argv) >= 3 and sys.argv[2] in ['True', 'true'] else False
 
@@ -220,6 +222,20 @@ def process_outlook(word, excel, ppt, outlook, source):
     print('Exception occured in outlook')
     handle_error(source) 
         
+        
+zipping_queue = queue.Queue()
+do_zipping = True
+
+def zipping_worker():
+    while do_zipping:
+        if zipping_queue.empty():
+            sleep(1)
+            continue
+            
+        path = zipping_queue.get()
+        shutil.make_archive(path, 'zip', path)
+        shutil.rmtree(path)
+
 
 def process_zip(word, excel, ppt, outlook, source):
     try:
@@ -260,8 +276,7 @@ def process_zip(word, excel, ppt, outlook, source):
                 return
                   
         os.remove(source)
-        shutil.make_archive(target_path, 'zip', target_path)
-        shutil.rmtree(target_path)
+        zipping_queue.put(target_path)
         return count
 
     except WindowsError as e:
@@ -403,6 +418,11 @@ if __name__ == "__main__":
     except AttributeError:
         shutil.rmtree(python_temp)
         outlook = setup_outlook()
+        
+        
+    zipping_workers = []
+    for i in range(0, 10):
+        zipping_workers.add(start_process(zipping_worker))
     
     for path in pathlib.Path(source).rglob('*.*'):
         try:
@@ -417,7 +437,7 @@ if __name__ == "__main__":
             print(error_msg)
             logfile.write(error_msg)
             print('press any key to continue...')
-            input()
+            #input()
             try:
                 os.remove(path)
             except:
@@ -442,6 +462,14 @@ if __name__ == "__main__":
         outlook.Quit()
     except:
         pass
+        
+    while not zipping_queue.empty():
+        sleep(5)
+      
+    do_zipping = False
+    
+    for zipping_worker in zipping_workers:
+        zipping_worker.join()
 
     logfile.close()
     print(f'converted {file_count} files')
