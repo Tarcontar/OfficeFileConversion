@@ -147,6 +147,7 @@ def process_excel(excel, source, target, format, target_dir):
     except pythoncom.com_error as error:
         print(error)
     except Exception as e:
+        print(e.args)
         print(e)
         
     print('Exception occured in excel')
