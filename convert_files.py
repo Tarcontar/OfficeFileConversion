@@ -428,7 +428,8 @@ if __name__ == "__main__":
         thread.start()
         zipping_workers.append(thread)
     
-    for path in pathlib.Path(source).rglob('*.*'):
+    paths = pathlib.Path(source).rglob('*.*')
+    for path in paths:
         try:
             file_count += process_file(word, excel, ppt, outlook, path)
         except Exception as e:
