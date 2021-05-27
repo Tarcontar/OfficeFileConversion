@@ -389,6 +389,12 @@ def process_file(word, excel, ppt, outlook, path):
         return process_zip(word, excel, ppt, outlook, path)
     return 0
     
+    
+def start_process(target_func):
+    worker = Process(target=target_func)
+    worker.start()
+    return worker
+    
  
 if __name__ == "__main__":
     print(f'Processing folder: {source}')
@@ -422,7 +428,7 @@ if __name__ == "__main__":
         
     zipping_workers = []
     for i in range(0, 10):
-        zipping_workers.add(start_process(zipping_worker))
+        zipping_workers.append(start_process(zipping_worker))
     
     for path in pathlib.Path(source).rglob('*.*'):
         try:
@@ -466,8 +472,7 @@ if __name__ == "__main__":
     while not zipping_queue.empty():
         sleep(5)
       
-    do_zipping = False
-    
+    do_zipping = False  
     for zipping_worker in zipping_workers:
         zipping_worker.join()
 
