@@ -274,6 +274,7 @@ def process_zip(word, excel, ppt, outlook, source):
         os.remove(source)
         print('## compressing...')
         process = Popen(['C:\\Program Files\\7-Zip\\7z.exe', 'a', '-mmt=24', target_path + '.zip', target_path])
+        input()
         #"C:\Program Files\7-Zip\7z.exe" a -mmt=24 "C:\Users\admin\Desktop\FileConversion.zip" "C:\Users\admin\Desktop\OfficeFileConversion"
         #shutil.make_archive(target_path, 'zip', target_path)
         shutil.rmtree(target_path)
