@@ -206,10 +206,8 @@ def process_outlook(word, excel, ppt, outlook, source):
         doc.Close(False)
         os.remove(html_path)
         
-        try:
-            shutil.rmtree(source[:-4] + '_files')
-        except:
-            shutil.rmtree(source[:-4] + '-Dateien')
+        shutil.rmtree(source[:-4] + '_files') if os.path.exists(source[:-4] + '_files')
+        shutil.rmtree(source[:-4] + '-Dateien') if os.path.exists(source[:-4] + '-Dateien')
                 
         if not msg.Attachments:
             return
@@ -278,7 +276,6 @@ def process_zip(word, excel, ppt, outlook, source):
                   
         os.remove(source)
         print('## compressing...')
-        #process = Popen(['C:\\Program Files\\7-Zip\\7z.exe', 'a', '-mmt=24', target_path + '.zip', target_path + '\\*'])
         shutil.make_archive(target_path, 'zip', target_path)
         shutil.rmtree(target_path)
         return count
@@ -438,7 +435,7 @@ if __name__ == "__main__":
             try:
                 os.remove(path)
             except:
-                pass
+                input()
 
     shutdown_office_app(word.Application)
     shutdown_office_app(excel.Application)
