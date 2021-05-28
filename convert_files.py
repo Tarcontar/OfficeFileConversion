@@ -12,9 +12,9 @@ import win32com
 process_malicious = True #if len(sys.argv) >= 3 and sys.argv[2] in ['True', 'true'] else False
 
 source = sys.argv[1]
-issue_target_dir = 'C:\\IF'
-legacy_target_dir = 'C:\\BF'
-logfile = open('C:\\log.txt', 'a')
+issue_target_dir = 'X:\\ZZ\\IF'
+legacy_target_dir = 'X:\\ZZ\\BF'
+logfile = open('X:\\ZZ\\log.txt', 'a')
 
 ACCESS_DENIED = 5
 
@@ -200,7 +200,7 @@ def process_outlook(word, excel, ppt, outlook, source):
         doc.ExportAsFixedFormat(source[:-4] + '.pdf', 17)
         doc.Close(False)
         os.remove(html_path)
-        shutil.rmtree(source[:-4] + '-Dateien')#'_files')
+        shutil.rmtree(source[:-4] + '_files')
         
         if not msg.Attachments:
             return
