@@ -206,8 +206,10 @@ def process_outlook(word, excel, ppt, outlook, source):
         doc.Close(False)
         os.remove(html_path)
         
-        shutil.rmtree(source[:-4] + '_files') if os.path.exists(source[:-4] + '_files')
-        shutil.rmtree(source[:-4] + '-Dateien') if os.path.exists(source[:-4] + '-Dateien')
+        if os.path.exists(source[:-4] + '_files'):
+            shutil.rmtree(source[:-4] + '_files')
+        if os.path.exists(source[:-4] + '-Dateien'):
+            shutil.rmtree(source[:-4] + '-Dateien')
                 
         if not msg.Attachments:
             return
