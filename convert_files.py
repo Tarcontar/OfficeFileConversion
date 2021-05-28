@@ -13,10 +13,12 @@ from subprocess import Popen
 
 process_malicious = True #if len(sys.argv) >= 3 and sys.argv[2] in ['True', 'true'] else False
 
-source = sys.argv[1]
-issue_target_dir = 'X:\\ZZ\\IF'
-legacy_target_dir = 'X:\\ZZ\\BF'
-logfile = open('X:\\ZZ\\log.txt', 'a')
+target_dir = sys.argv[1]
+issue_target_dir = f'{target_dir}\\IF'
+legacy_target_dir = f'{target_dir}\\BF'
+logfile = open(f'{target_dir}\\log.txt', 'a')
+
+source = sys.argv[2]
 
 ACCESS_DENIED = 5
 
@@ -109,7 +111,7 @@ def handle_fake_files(path, extension, extensions_filter):
     return path, True
     
 
-def process_word(word, source, target, format, target_dir):
+def process_word(word, source, target, format):
     try:
         if word is None:
             word = setup_word()
@@ -135,7 +137,7 @@ def process_word(word, source, target, format, target_dir):
     print('Exception occured with word')
     
     
-def process_excel(excel, source, target, format, target_dir):
+def process_excel(excel, source, target, format):
     try:
         if excel is None:
             excel = setup_excel()
@@ -162,7 +164,7 @@ def process_excel(excel, source, target, format, target_dir):
     handle_error(source)
     
     
-def process_powerpoint(ppt, source, target, format, target_dir):
+def process_powerpoint(ppt, source, target, format):
     try:
         if ppt is None:
             ppt = setup_ppt()
@@ -321,7 +323,7 @@ def process_file(word, excel, ppt, outlook, path):
         else:
             new_path = path + 'x'
         
-        process_word(word, path, new_path, format, legacy_target_dir)
+        process_word(word, path, new_path, format)
         return 1
         
     elif extension in excel_filter:
@@ -342,7 +344,7 @@ def process_file(word, excel, ppt, outlook, path):
         else:
             new_path = path + 'x'
         
-        process_excel(excel, path, new_path, format, legacy_target_dir)
+        process_excel(excel, path, new_path, format)
         return 1
 
     elif extension in ppt_filter:
@@ -365,7 +367,7 @@ def process_file(word, excel, ppt, outlook, path):
         else:
             new_path = path + 'x'
 
-        process_powerpoint(ppt, path, new_path, format, legacy_target_dir)
+        process_powerpoint(ppt, path, new_path, format)
         return 1
         
     elif extension in outlook_filter:
