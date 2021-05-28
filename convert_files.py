@@ -389,36 +389,32 @@ def process_file(word, excel, ppt, outlook, path):
         return process_zip(word, excel, ppt, outlook, path)
     return 0
     
+    
+def setup_office_app(func):
+    try:
+        return func()
+    except AttributeError:
+        shutil.rmtree(python_temp)
+        return func()
+      
+      
+def shutdown_office_app(app):
+    try:     
+        app.Quit()
+    except:
+        pass
+ 
  
 if __name__ == "__main__":
     print(f'Processing folder: {source}')
     file_count = 0
     issue_count = 0
     
-    try:
-        word = setup_word()
-    except AttributeError:
-        shutil.rmtree(python_temp)
-        word = setup_word()
+    word = setup_office_app(setup_word)
+    excel = setup_office_app(setup_excel)
+    ppt = setup_office_app(setup_ppt)
+    outlook = setup_office_app(setup_outlook)
     
-    try:
-        excel = setup_excel()
-    except AttributeError:
-        shutil.rmtree(python_temp)
-        excel = setup_excel()
-        
-    try:
-        ppt = setup_ppt()
-    except AttributeError:
-        shutil.rmtree(python_temp)
-        ppt = setup_ppt()
-        
-    try:
-        outlook = setup_outlook()
-    except AttributeError:
-        shutil.rmtree(python_temp)
-        outlook = setup_outlook()
-        
     for path in pathlib.Path(source).rglob('*.*'):
         try:
             file_count += process_file(word, excel, ppt, outlook, path)
@@ -438,25 +434,10 @@ if __name__ == "__main__":
             except:
                 pass
 
-    try:     
-        word.Application.Quit()
-    except:
-        pass
-        
-    try:     
-        excel.Application.Quit()
-    except:
-        pass
-        
-    try:     
-        ppt.Quit()
-    except:
-        pass
-        
-    try:     
-        outlook.Quit()
-    except:
-        pass
+    shutdown_office_app(word.Application)
+    shutdown_office_app(excel.Application)
+    shutdown_office_app(ppt)
+    shutdown_office_app(outlook)
 
     logfile.close()
     print(f'converted {file_count} files')
