@@ -8,6 +8,8 @@ import zipfile
 import win32com.client as win32
 from win32com.client import constants
 import win32com
+from subprocess import Popen
+
 
 process_malicious = True #if len(sys.argv) >= 3 and sys.argv[2] in ['True', 'true'] else False
 
@@ -81,7 +83,8 @@ def get_magic(path):
 
 def copy_file(source, target):
     os.makedirs(target.replace(os.path.basename(target), ''), exist_ok = True)
-    shutil.copyfile(source, target)
+    if not os.path.exists(target):
+        shutil.copyfile(source, target)
 
 
 def handle_error(path):
@@ -254,6 +257,7 @@ def process_zip(word, excel, ppt, outlook, source):
             return 1
             
         target_path = source[:-4]
+        print('## extracting...')
         zip.extractall(target_path)
         zip.close()
             
@@ -266,8 +270,12 @@ def process_zip(word, excel, ppt, outlook, source):
                 shutil.rmtree(target_path)
                 return
                   
+        input()
         os.remove(source)
-        shutil.make_archive(target_path, 'zip', target_path)
+        print('## compressing...')
+        process = Popen(['C:\\Program Files\\7-Zip\\7z.exe', 'a', '-mmt=24', target_path + '.zip', target_path])
+        #"C:\Program Files\7-Zip\7z.exe" a -mmt=24 "C:\Users\admin\Desktop\FileConversion.zip" "C:\Users\admin\Desktop\OfficeFileConversion"
+        #shutil.make_archive(target_path, 'zip', target_path)
         shutil.rmtree(target_path)
         return count
 
@@ -371,9 +379,11 @@ def process_file(word, excel, ppt, outlook, path):
         if 'Win-Plantafel2' in path:
             return 0
         
-        placeholder = open(path + '.txt', 'w')
-        placeholder.write('file might be malicious and was moved to a backup location, please contact your IT')
-        placeholder.close()
+        placeholder_path = path + '.txt'
+        if not os.path.exists(placeholder_path):
+            placeholder = open(placeholder_path, 'w')
+            placeholder.write('file might be malicious and was moved to a backup location, please contact your IT')
+            placeholder.close()
         copy_file(path, issue_target_dir + path[2:])
         os.remove(path)
         
