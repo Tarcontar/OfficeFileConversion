@@ -438,6 +438,8 @@ if __name__ == "__main__":
                 os.remove(path)
             except:
                 input()
+        except KeyboardInterrupt:
+            break
 
     shutdown_office_app(word.Application)
     shutdown_office_app(excel.Application)
