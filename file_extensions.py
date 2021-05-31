@@ -24,10 +24,10 @@ for path in pathlib.Path(str(source_dir)).rglob('*.*'):
     if not extension in file_extensions:
         file_extensions.append(extension)
         
-    if extension in bad_files:
-        print(path)
-        subprocess.Popen(f'explorer /select,{str(path)}')
-        input()
+    #if extension in bad_files:
+        #print(path)
+        #subprocess.Popen(f'explorer /select,{str(path)}')
+        #input()
         
 file_extensions.sort() 
 print(file_extensions)

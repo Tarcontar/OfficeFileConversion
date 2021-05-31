@@ -8,17 +8,7 @@ import zipfile
 import win32com.client as win32
 from win32com.client import constants
 import win32com
-from subprocess import Popen
 
-
-process_malicious = True #if len(sys.argv) >= 3 and sys.argv[2] in ['True', 'true'] else False
-
-target_dir = sys.argv[1]
-issue_target_dir = f'{target_dir}\\IF'
-legacy_target_dir = f'{target_dir}\\BF'
-logfile = open(f'{target_dir}\\log.txt', 'a')
-
-source = sys.argv[2]
 
 ACCESS_DENIED = 5
 
@@ -34,12 +24,23 @@ XLTX_FILE_FORMAT = 54
 ZIP_FILE_MAGIC = '504b0304'
 #EXE_FILE_MAGICS = ['4d5a', '5a4d']
 
+
+target_dir = sys.argv[1]
+issue_target_dir = f'{target_dir}\\IF'
+legacy_target_dir = f'{target_dir}\\BF'
+logfile = open(f'{target_dir}\\log.txt', 'a')
+
+source = sys.argv[2]
+
 current_dir = pathlib.Path(__file__).parent.absolute()
 python_temp = 'C:\\Users\\admin\\AppData\\Local\\Temp\\gen_py'
 
-word_filter = ['docx', 'doc', 'docm', 'dotx', 'dot', 'dotm', 'odt']
-excel_filter = ['xlsx', 'xls', 'xlsm', 'xlsb', 'xltx', 'xlt', 'xltm', 'ods']
-ppt_filter = ['pptx', 'ppt', 'pptm', 'potx', 'pot', 'potm', 'ppsx', 'pps', 'ppsm', 'odp']
+word_filter = ['doc', 'docm', 'dot', 'dotm', 'odt']
+word_fake_filter = ['docx', 'dotx']
+excel_filter = ['xls', 'xlsm', 'xlsb', 'xlt', 'xltm', 'ods']
+excel_fake_filter = ['xlsx', 'xltx']
+ppt_filter = ['ppt', 'pptm', 'pot', 'potm', 'pps', 'ppsm', 'odp']
+ppt_fake_filter = ['pptx', 'potx', 'ppsx']
 outlook_filter = ['msg']
 archive_filter = ['zip', 'rar', '7z']
 malicious_filter = ['pst', 'xlam', 'osd', 'py', 'exe', 'msi', 'bat', 'reg', 'pol', 'ps1', 'psm1', 'psd1', 'ps1xml', 'pssc', 'psrc', 'cdxml']
@@ -51,6 +52,15 @@ print(f'processing all {outlook_filter} files in \'{source}\'')
 print(f'processing all {malicious_filter} files in \'{source}\'')
 print('do NOT close any opening office application windows (minimize them instead)')
 
+
+ #TODO: get from sys.argv
+process_word = True
+process_excel = True
+process_ppt = True
+process_outlook = True
+process_fakefiles = False
+process_malicious = True
+process_archives = True
 
 
 def setup_word():
@@ -96,7 +106,9 @@ def handle_error(path):
     placeholder = open(path + '.txt', 'w')
     placeholder.write('file could not be converted please contact your IT')
     placeholder.close()
+    print('## copying...')
     copy_file(path, issue_target_dir + path[2:])
+    print('## deleting...')
     os.remove(path)
     
     
@@ -194,7 +206,7 @@ def process_outlook(word, excel, ppt, outlook, source):
         if outlook is None:
             outlook = setup_outlook()
  
-        tmp_file = issue_target_dir + source[2:]
+        tmp_file = legacy_target_dir + source[2:]
         copy_file(source, tmp_file) # TODO: only workaround for outlook not closing file properly
         os.remove(source)
         msg = outlook.OpenSharedItem(tmp_file)
@@ -221,7 +233,7 @@ def process_outlook(word, excel, ppt, outlook, source):
             attachment.SaveAsFile(path)
             count += process_file(word, excel, ppt, outlook, path)
         
-        msg.Close(1)  
+        msg.Close(1)
         return
             
     except WindowsError as e:
@@ -253,11 +265,15 @@ def process_zip(word, excel, ppt, outlook, source):
             extension = pathlib.Path(file).suffix[1:].lower()
             
             if extension in word_filter or extension in excel_filter \
-                or extension in ppt_filter or extension in outlook_filter \
-                    or extension in malicious_filter or extension in archive_filter:
-                if not extension in ['docx', 'dotx', 'xlsx', 'xltx', 'pptx', 'potx', 'ppsx']:
-                    needs_processing = True
-                    break
+                        or extension in ppt_filter or extension in outlook_filter \
+                        or extension in malicious_filter or extension in archive_filter:
+                needs_processing = True
+                break
+            if process_fakefiles and (extension in word_fake_filter \
+                        or extension in excel_fake_filter \
+                        or extension in ppt_fake_filter):
+                needs_processing = True
+                break
             
         if not needs_processing:
             return 1
@@ -274,7 +290,7 @@ def process_zip(word, excel, ppt, outlook, source):
             except Exception as e:
                 handle_error(source)
                 shutil.rmtree(target_path)
-                return
+                return 0
                   
         os.remove(source)
         print('## compressing...')
@@ -284,7 +300,7 @@ def process_zip(word, excel, ppt, outlook, source):
 
     except WindowsError as e:
         if e.winerror == ACCESS_DENIED:
-            return
+            return 0
         print(e)
         
     except Exception as e:
@@ -308,8 +324,8 @@ def process_file(word, excel, ppt, outlook, path):
         os.remove(path)
         return 0
     
-    if extension in word_filter:
-        path, processing_needed = handle_fake_files(path, extension, ['docx', 'dotx'])
+    if process_word and (extension in word_filter or process_fakefiles and extension in word_fake_filter):
+        path, processing_needed = handle_fake_files(path, extension, word_fake_filter)
         if not processing_needed:
             return 0
         
@@ -329,8 +345,8 @@ def process_file(word, excel, ppt, outlook, path):
         process_word(word, path, new_path, format)
         return 1
         
-    elif extension in excel_filter:
-        path, processing_needed = handle_fake_files(path, extension, ['xlsx', 'xltx'])
+    elif process_excel and (extension in excel_filter or process_fakefiles and extension in excel_fake_filter):
+        path, processing_needed = handle_fake_files(path, extension, excel_fake_filter)
         if not processing_needed:
             return 0
             
@@ -350,8 +366,8 @@ def process_file(word, excel, ppt, outlook, path):
         process_excel(excel, path, new_path, format)
         return 1
 
-    elif extension in ppt_filter:
-        path, processing_needed = handle_fake_files(path, extension, ['pptx', 'potx', 'ppsx'])
+    elif process_ppt and (extension in ppt_filter or process_fakefiles and extension in ppt_fake_filter):
+        path, processing_needed = handle_fake_files(path, extension, ppt_fake_filter)
         if not processing_needed:
             return 0
         
@@ -373,7 +389,7 @@ def process_file(word, excel, ppt, outlook, path):
         process_powerpoint(ppt, path, new_path, format)
         return 1
         
-    elif extension in outlook_filter:
+    elif process_outlook and extension in outlook_filter:
         process_outlook(word, excel, ppt, outlook, path)
         return 1
         
@@ -390,7 +406,7 @@ def process_file(word, excel, ppt, outlook, path):
         copy_file(path, issue_target_dir + path[2:])
         os.remove(path)
         
-    elif extension in archive_filter and zipfile.is_zipfile(path):
+    elif process_archives and extension in archive_filter:
         return process_zip(word, excel, ppt, outlook, path)
     return 0
     
@@ -420,7 +436,12 @@ if __name__ == "__main__":
     ppt = setup_office_app(setup_ppt)
     outlook = setup_office_app(setup_outlook)
     
-    for path in pathlib.Path(source).rglob('*.*'):
+    if os.path.isdir(source):
+        paths = pathlib.Path(source).rglob('*.*')
+    else:
+        paths = [source]
+    
+    for path in paths:
         try:
             file_count += process_file(word, excel, ppt, outlook, path)
         except Exception as e:
@@ -437,7 +458,7 @@ if __name__ == "__main__":
             try:
                 os.remove(path)
             except:
-                input()
+                pass
         except KeyboardInterrupt:
             break
 
