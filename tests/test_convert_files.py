@@ -1,20 +1,25 @@
 import os
+import sys
 import unittest
 import shutil
 from os.path import dirname as up
 from test_utils import TestCase
 
+sys.path.insert(1, '..')
+from convert_files import process_folder
+
 
 class FileConversionTests(TestCase):
     def test_convert_doc(self):
-        source = up(self.relpath()) + '\\source\\doc.doc'
+        source = up(self.relpath()) + '\\source'
+        source_file = source + '\\doc.doc'
         target = self.outpath() + 'doc.doc'
-        print(source)
-        print(target)
-        shutil.copyfile(source, target)
+        shutil.copyfile(source_file, target)
         
-        os.system(f'{up(self.relpath())}\\convert_files.py C:\\ {self.outpath()}')
-        self.assertTrue(os.path.exists(source + 'x'))
+        issue_dir = self.outpath() + 'issue'
+        os.makedirs(issue_dir)
+        process_folder(issue_dir, self.outpath())
+        self.assertTrue(os.path.exists(self.outpath() + 'doc.docx'))
         
 
 if __name__ == '__main__':
