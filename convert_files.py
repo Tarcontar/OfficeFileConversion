@@ -229,7 +229,6 @@ def process_outlook(word, excel, ppt, outlook, source):
         count = 0
         for attachment in msg.Attachments:
             path = source[:-3] + attachment.FileName
-            print(attachment.FileName)
             attachment.SaveAsFile(path)
             count += process_file(word, excel, ppt, outlook, path)
         
