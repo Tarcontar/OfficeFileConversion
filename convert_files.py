@@ -310,13 +310,12 @@ def process_file(path):
     if os.path.isdir(path):
         return 0
 
-    extension = pathlib.Path(path).suffix[1:].lower()
-    #print (os.path.basename(path))
-
     if os.path.basename(path).startswith('~$'):
-        print(path)
         os.remove(path)
         return 0
+        
+    extension = pathlib.Path(path).suffix[1:].lower()
+    #print (os.path.basename(path))
     
     if process_word and (extension in word_filter or process_fakefiles and extension in word_fake_filter):
         path, processing_needed = handle_fake_files(path, extension, word_fake_filter)
