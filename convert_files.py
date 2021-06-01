@@ -48,7 +48,7 @@ process_word = True
 process_excel = True
 process_ppt = True
 process_outlook = True
-process_fakefiles = False
+process_fakefiles = True
 process_malicious = True
 process_archives = True
 
@@ -314,7 +314,7 @@ def process_file(path):
     #print (os.path.basename(path))
 
     if os.path.basename(path).startswith('~$'):
-        print (path)
+        print(path)
         os.remove(path)
         return 0
     
@@ -456,7 +456,7 @@ def process_folder(target_dir, source):
     
     for path in paths:
         try:
-            file_count += process_file(word, excel, ppt, outlook, path)
+            file_count += process_file(path)
         except Exception as e:
             issue_count += 1
             path = str(path)
@@ -483,9 +483,11 @@ def process_folder(target_dir, source):
     logfile.close()
     print(f'converted {file_count} files')
     print(f'had {issue_count} issues')
-    input('Press Enter to continue...')
+    return (file_count, issue_count)
+    
     
     
 if __name__ == "__main__":
     process_folder(sys.argv[1], sys.argv[2])
+    input('Press Enter to continue...')
 

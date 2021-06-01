@@ -16,17 +16,15 @@ class TestCase(unittest.TestCase):
     
     @classmethod
     def outpath(cls, path=''):
-        if not os.path.exists(cls.__filepath):
-            os.makedirs(cls.__filepath)
-        return os.path.join(cls.__filepath, path)
+        new_path = os.path.join(cls.__filepath, path)
+        if not os.path.exists(new_path):
+            os.makedirs(new_path)
+        return new_path
     
     def setUp(self):
         namespace = self.id().split('.')
         testname = namespace[-2] + '.' + namespace[-1]
         print(testname)
-
-        self.__filepath += testname + os.path.sep
-        print(self.__filepath)
         if not os.path.exists(self.__filepath):
             os.makedirs(self.__filepath)
             
