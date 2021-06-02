@@ -24,15 +24,12 @@ XLTX_FILE_FORMAT = 54
 ZIP_FILE_MAGIC = '504b0304'
 #EXE_FILE_MAGICS = ['4d5a', '5a4d']
 
+issue_target_dir = ''
+legacy_target_dir = ''
+logfile = None
 
-target_dir = sys.argv[1]
-issue_target_dir = f'{target_dir}\\IF'
-legacy_target_dir = f'{target_dir}\\BF'
-logfile = open(f'{target_dir}\\log.txt', 'a')
+source = ''
 
-source = sys.argv[2]
-
-current_dir = pathlib.Path(__file__).parent.absolute()
 python_temp = 'C:\\Users\\admin\\AppData\\Local\\Temp\\gen_py'
 
 word_filter = ['doc', 'docm', 'dot', 'dotm', 'odt']
@@ -45,46 +42,44 @@ outlook_filter = ['msg']
 archive_filter = ['zip', 'rar', '7z']
 malicious_filter = ['pst', 'xlam', 'osd', 'py', 'exe', 'msi', 'bat', 'reg', 'pol', 'ps1', 'psm1', 'psd1', 'ps1xml', 'pssc', 'psrc', 'cdxml']
 
-print(f'processing all {word_filter} files in \'{source}\'')
-print(f'processing all {excel_filter} files in \'{source}\'')
-print(f'processing all {ppt_filter} files in \'{source}\'')
-print(f'processing all {outlook_filter} files in \'{source}\'')
-print(f'processing all {malicious_filter} files in \'{source}\'')
-print('do NOT close any opening office application windows (minimize them instead)')
-
 
  #TODO: get from sys.argv
 process_word = True
 process_excel = True
 process_ppt = True
 process_outlook = True
-process_fakefiles = False
+process_fakefiles = True
 process_malicious = True
 process_archives = True
 
+word = None
+excel = None
+ppt = None
+outlook = None
+
 
 def setup_word():
+    global word
     word = win32.gencache.EnsureDispatch('Word.Application')
     word.DisplayAlerts = False
-    return word
     
     
 def setup_excel():
+    global excel
     excel = win32.gencache.EnsureDispatch('Excel.Application')
     excel.DisplayAlerts = False
     excel.EnableEvents = False
-    return excel
 
 
 def setup_ppt():
+    global ppt
     ppt = win32.gencache.EnsureDispatch('Powerpoint.Application')
     ppt.DisplayAlerts = constants.ppAlertsNone
-    return ppt
     
     
 def setup_outlook():
+    global outlook
     outlook = win32.gencache.EnsureDispatch('Outlook.Application').GetNamespace('MAPI')
-    return outlook
 
 
 def get_magic(path):
@@ -123,10 +118,10 @@ def handle_fake_files(path, extension, extensions_filter):
     return path, True
     
 
-def process_word(word, source, target, format):
+def process_word(source, target, format):
     try:
-        if word is None:
-            word = setup_word()
+        if word is None:   
+            setup_word()
         doc = word.Documents.Open(source, ConfirmConversions=False, Visible=False, PasswordDocument="invalid")
         doc.Activate()
         word.ActiveDocument.SaveAs(target, format)
@@ -149,10 +144,10 @@ def process_word(word, source, target, format):
     print('Exception occured with word')
     
     
-def process_excel(excel, source, target, format):
+def process_excel(source, target, format):
     try:
         if excel is None:
-            excel = setup_excel()
+            setup_excel()
         wb = excel.Workbooks.Open(source, UpdateLinks=False, Password='', WriteResPassword='')
         wb.Application.DisplayAlerts = False
         wb.Application.EnableEvents = False
@@ -176,10 +171,10 @@ def process_excel(excel, source, target, format):
     handle_error(source)
     
     
-def process_powerpoint(ppt, source, target, format):
+def process_powerpoint(source, target, format):
     try:
         if ppt is None:
-            ppt = setup_ppt()
+            setup_ppt()
         presentation = ppt.Presentations.Open(source + ':::', WithWindow=False)
         presentation.SaveAs(target, format)
         presentation.Close()
@@ -201,10 +196,10 @@ def process_powerpoint(ppt, source, target, format):
     handle_error(source)
         
         
-def process_outlook(word, excel, ppt, outlook, source):
+def process_outlook(source):
     try:
         if outlook is None:
-            outlook = setup_outlook()
+            setup_outlook()
  
         tmp_file = legacy_target_dir + source[2:]
         copy_file(source, tmp_file) # TODO: only workaround for outlook not closing file properly
@@ -230,7 +225,7 @@ def process_outlook(word, excel, ppt, outlook, source):
         for attachment in msg.Attachments:
             path = source[:-3] + attachment.FileName
             attachment.SaveAsFile(path)
-            count += process_file(word, excel, ppt, outlook, path)
+            count += process_file(path)
         
         msg.Close(1)
         return
@@ -248,7 +243,7 @@ def process_outlook(word, excel, ppt, outlook, source):
     handle_error(source) 
         
 
-def process_zip(word, excel, ppt, outlook, source):
+def process_zip(source):
     try:
         zip = zipfile.ZipFile(source)
         for zinfo in zip.infolist():
@@ -285,7 +280,7 @@ def process_zip(word, excel, ppt, outlook, source):
         count = 0
         for path in pathlib.Path(target_path).rglob('*.*'):
             try:
-                count += process_file(word, excel, ppt, outlook, path)
+                count += process_file(path)
             except Exception as e:
                 handle_error(source)
                 shutil.rmtree(target_path)
@@ -308,20 +303,19 @@ def process_zip(word, excel, ppt, outlook, source):
         return 0
 
 
-def process_file(word, excel, ppt, outlook, path):
+def process_file(path):
     path = str(path)
     print (path)
     
     if os.path.isdir(path):
         return 0
 
-    extension = pathlib.Path(path).suffix[1:].lower()
-    #print (os.path.basename(path))
-
     if os.path.basename(path).startswith('~$'):
-        print (path)
         os.remove(path)
         return 0
+        
+    extension = pathlib.Path(path).suffix[1:].lower()
+    #print (os.path.basename(path))
     
     if process_word and (extension in word_filter or process_fakefiles and extension in word_fake_filter):
         path, processing_needed = handle_fake_files(path, extension, word_fake_filter)
@@ -341,7 +335,7 @@ def process_file(word, excel, ppt, outlook, path):
         else:
             new_path = path + 'x'
         
-        process_word(word, path, new_path, format)
+        process_word(path, new_path, format)
         return 1
         
     elif process_excel and (extension in excel_filter or process_fakefiles and extension in excel_fake_filter):
@@ -362,7 +356,7 @@ def process_file(word, excel, ppt, outlook, path):
         else:
             new_path = path + 'x'
         
-        process_excel(excel, path, new_path, format)
+        process_excel(path, new_path, format)
         return 1
 
     elif process_ppt and (extension in ppt_filter or process_fakefiles and extension in ppt_fake_filter):
@@ -385,11 +379,11 @@ def process_file(word, excel, ppt, outlook, path):
         else:
             new_path = path + 'x'
 
-        process_powerpoint(ppt, path, new_path, format)
+        process_powerpoint(path, new_path, format)
         return 1
         
     elif process_outlook and extension in outlook_filter:
-        process_outlook(word, excel, ppt, outlook, path)
+        process_outlook(path)
         return 1
         
     elif process_malicious and extension in malicious_filter:
@@ -412,10 +406,10 @@ def process_file(word, excel, ppt, outlook, path):
     
 def setup_office_app(func):
     try:
-        return func()
+        func()
     except AttributeError:
         shutil.rmtree(python_temp)
-        return func()
+        func()
       
       
 def shutdown_office_app(app):
@@ -425,15 +419,34 @@ def shutdown_office_app(app):
         pass
  
  
-if __name__ == "__main__":
-    print(f'Processing folder: {source}')
+def process_folder(target_dir, source):
+    global issue_target_dir
+    issue_target_dir = f'{target_dir}\\IF'
+    global legacy_target_dir
+    legacy_target_dir = f'{target_dir}\\BF'
+    
+    logfile_path = f'{target_dir}\\log.txt'
+    
+    global logfile
+    if os.path.exists(logfile_path):
+        logfile = open(logfile_path, 'a')
+    else:
+        logfile = open(logfile_path, 'w')
+
+    print(f'processing all {word_filter} files in \'{source}\'')
+    print(f'processing all {excel_filter} files in \'{source}\'')
+    print(f'processing all {ppt_filter} files in \'{source}\'')
+    print(f'processing all {outlook_filter} files in \'{source}\'')
+    print(f'processing all {malicious_filter} files in \'{source}\'')
+    print('do NOT close any opening office application windows (minimize them instead)')
+ 
     file_count = 0
     issue_count = 0
     
-    word = setup_office_app(setup_word)
-    excel = setup_office_app(setup_excel)
-    ppt = setup_office_app(setup_ppt)
-    outlook = setup_office_app(setup_outlook)
+    setup_office_app(setup_word)
+    setup_office_app(setup_excel)
+    setup_office_app(setup_ppt)
+    setup_office_app(setup_outlook)
     
     if os.path.isdir(source):
         paths = pathlib.Path(source).rglob('*.*')
@@ -442,7 +455,7 @@ if __name__ == "__main__":
     
     for path in paths:
         try:
-            file_count += process_file(word, excel, ppt, outlook, path)
+            file_count += process_file(path)
         except Exception as e:
             issue_count += 1
             path = str(path)
@@ -469,4 +482,11 @@ if __name__ == "__main__":
     logfile.close()
     print(f'converted {file_count} files')
     print(f'had {issue_count} issues')
+    return (file_count, issue_count)
+    
+    
+    
+if __name__ == "__main__":
+    process_folder(sys.argv[1], sys.argv[2])
     input('Press Enter to continue...')
+
