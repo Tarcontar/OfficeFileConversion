@@ -1,15 +1,15 @@
 import os
 import pathlib
 
-files_to_delete = ['docx', 'xlsx', 'pptx', 'dotx', 'xltx', 'potx', 'ppsx', 'txt']
+file_filter = ['docx', 'xlsx', 'pptx', 'dotx', 'xltx', 'potx', 'ppsx', 'txt']
 
-print(f'deleting all files of type {files_to_delete}')
+print(f'deleting all files of type {file_filter}')
 
 current_dir = pathlib.Path(__file__).parent.absolute()
 
 for path in pathlib.Path(str(current_dir)).rglob('*.*'):
-    extension = path.name.split('.')[-1]
-    if extension in files_to_delete: # todo: remove or rename these
+    extension = pathlib.Path(path).suffix[1:].lower()
+    if extension in file_filter:
         os.remove(path)
         
 input("Press Enter to continue...")
