@@ -14,53 +14,36 @@ class FileConversionTests(TestCase):
     def copy_file(self, filename):
         source_file = up(self.relpath()) + os.path.sep +  'source' + os.path.sep + filename
         shutil.copyfile(source_file, self.outpath('source') + os.path.sep + filename)
+        
+    def run_test(self, filename, expected):
+        self.copy_file(filename)
+        
+        issue_dir = self.outpath('issue')
+        target_dir = self.outpath('source')
+        self.assertEqual((1, 0), process_folder(issue_dir, target_dir))
+        self.assertFalse(os.path.exists(target_dir + os.path.sep + filename))
+        self.assertTrue(os.path.exists(target_dir + os.path.sep + expected))
+        self.assertTrue(ZIP_FILE_MAGIC in get_magic(target_dir + os.path.sep + expected))
 
     def test_convert_doc(self):
         filename = 'doc.doc'
         expected = 'doc.docx'
-        self.copy_file(filename)
-        
-        issue_dir = self.outpath('issue')
-        target_dir = self.outpath('source')
-        self.assertEqual((1, 0), process_folder(issue_dir, target_dir))
-        self.assertFalse(os.path.exists(target_dir + os.path.sep + filename))
-        self.assertTrue(os.path.exists(target_dir + os.path.sep + expected))
-        self.assertTrue(ZIP_FILE_MAGIC in get_magic(target_dir + os.path.sep + expected))
+        self.run_test(filename, expected)
         
     def test_convert_docm(self):
         filename = 'docm.docm'
         expected = 'docm.docx'
-        self.copy_file(filename)
-        
-        issue_dir = self.outpath('issue')
-        target_dir = self.outpath('source')
-        self.assertEqual((1, 0), process_folder(issue_dir, target_dir))
-        self.assertFalse(os.path.exists(target_dir + os.path.sep + filename))
-        self.assertTrue(os.path.exists(target_dir + os.path.sep + expected))
-        self.assertTrue(ZIP_FILE_MAGIC in get_magic(target_dir + os.path.sep + expected))
+        self.run_test(filename, expected)
         
     def test_convert_dot(self):
         filename = 'dot.dot'
         expected = 'dot.dotx'
-        self.copy_file(filename)
-        
-        issue_dir = self.outpath('issue')
-        target_dir = self.outpath('source')
-        self.assertEqual((1, 0), process_folder(issue_dir, target_dir))
-        self.assertFalse(os.path.exists(target_dir + os.path.sep + filename))
-        self.assertTrue(os.path.exists(target_dir + os.path.sep + expected))
-        self.assertTrue(ZIP_FILE_MAGIC in get_magic(target_dir + os.path.sep + expected))
+        self.run_test(filename, expected)
         
     def test_convert_docx(self):
         filename = 'docx.docx'
         expected = 'docx.docx'
-        self.copy_file(filename)
-        
-        issue_dir = self.outpath('issue')
-        target_dir = self.outpath('source')
-        self.assertEqual((0, 0), process_folder(issue_dir, target_dir))
-        self.assertTrue(os.path.exists(target_dir + os.path.sep + expected))
-        self.assertTrue(ZIP_FILE_MAGIC in get_magic(target_dir + os.path.sep + expected))
+        self.run_test(filename, expected)
         
     def test_convert_doc_fake_docx(self):
         filename = 'doc_fake_docx.docx'
@@ -71,6 +54,7 @@ class FileConversionTests(TestCase):
         target_dir = self.outpath('source')
         self.assertEqual((1, 0), process_folder(issue_dir, target_dir))
         self.assertTrue(os.path.exists(target_dir + os.path.sep + expected))
+        self.assertTrue(ZIP_FILE_MAGIC in get_magic(target_dir + os.path.sep + expected))
         
     def test_convert_dot_fake_dotx(self):
         filename = 'dot_fake_dotx.dotx'
@@ -86,26 +70,12 @@ class FileConversionTests(TestCase):
     def test_convert_dotm(self):
         filename = 'dotm.dotm'
         expected = 'dotm.dotx'
-        self.copy_file(filename)
-        
-        issue_dir = self.outpath('issue')
-        target_dir = self.outpath('source')
-        self.assertEqual((1, 0), process_folder(issue_dir, target_dir))
-        self.assertFalse(os.path.exists(target_dir + os.path.sep + filename))
-        self.assertTrue(os.path.exists(target_dir + os.path.sep + expected))
-        self.assertTrue(ZIP_FILE_MAGIC in get_magic(target_dir + os.path.sep + expected))
+        self.run_test(filename, expected)
         
     def test_convert_odt(self):
         filename = 'odt.odt'
         expected = 'odt.docx'
-        self.copy_file(filename)
-        
-        issue_dir = self.outpath('issue')
-        target_dir = self.outpath('source')
-        self.assertEqual((1, 0), process_folder(issue_dir, target_dir))
-        self.assertFalse(os.path.exists(target_dir + os.path.sep + filename))
-        self.assertTrue(os.path.exists(target_dir + os.path.sep + expected))
-        self.assertTrue(ZIP_FILE_MAGIC in get_magic(target_dir + os.path.sep + expected))
+        self.run_test(filename, expected)
         
     def test_convert_doc_password(self):
         filename = 'doc_password.doc'
@@ -130,14 +100,7 @@ class FileConversionTests(TestCase):
     def test_convert_xls(self):
         filename = 'xls.xls'
         expected = 'xls.xlsx'
-        self.copy_file(filename)
-        
-        issue_dir = self.outpath('issue')
-        target_dir = self.outpath('source')
-        self.assertEqual((1, 0), process_folder(issue_dir, target_dir))
-        self.assertFalse(os.path.exists(target_dir + os.path.sep + filename))
-        self.assertTrue(os.path.exists(target_dir + os.path.sep + expected))
-        self.assertTrue(ZIP_FILE_MAGIC in get_magic(target_dir + os.path.sep + expected))
+        self.run_test(filename, expected)
         
     def test_convert_xls_fake_xlsx(self):
         filename = 'xls_fake_xlsx.xlsx'
@@ -147,7 +110,6 @@ class FileConversionTests(TestCase):
         issue_dir = self.outpath('issue')
         target_dir = self.outpath('source')
         self.assertEqual((1, 0), process_folder(issue_dir, target_dir))
-        self.assertFalse(os.path.exists(target_dir + os.path.sep + filename))
         self.assertTrue(os.path.exists(target_dir + os.path.sep + expected))
         self.assertTrue(ZIP_FILE_MAGIC in get_magic(target_dir + os.path.sep + expected))
         
@@ -165,50 +127,22 @@ class FileConversionTests(TestCase):
     def test_convert_xlsb(self):
         filename = 'xlsb.xlsb'
         expected = 'xlsb.xlsx'
-        self.copy_file(filename)
-        
-        issue_dir = self.outpath('issue')
-        target_dir = self.outpath('source')
-        self.assertEqual((1, 0), process_folder(issue_dir, target_dir))
-        self.assertFalse(os.path.exists(target_dir + os.path.sep + filename))
-        self.assertTrue(os.path.exists(target_dir + os.path.sep + expected))
-        self.assertTrue(ZIP_FILE_MAGIC in get_magic(target_dir + os.path.sep + expected))
+        self.run_test(filename, expected)
       
     def test_convert_xlsm(self):
         filename = 'xlsm.xlsm'
         expected = 'xlsm.xlsx'
-        self.copy_file(filename)
-        
-        issue_dir = self.outpath('issue')
-        target_dir = self.outpath('source')
-        self.assertEqual((1, 0), process_folder(issue_dir, target_dir))
-        self.assertFalse(os.path.exists(target_dir + os.path.sep + filename))
-        self.assertTrue(os.path.exists(target_dir + os.path.sep + expected))
-        self.assertTrue(ZIP_FILE_MAGIC in get_magic(target_dir + os.path.sep + expected))
+        self.run_test(filename, expected)
         
     def test_convert_xlsm(self):
         filename = 'xlsx.xlsx'
         expected = 'xlsx.xlsx'
-        self.copy_file(filename)
-        
-        issue_dir = self.outpath('issue')
-        target_dir = self.outpath('source')
-        self.assertEqual((0, 0), process_folder(issue_dir, target_dir))
-        self.assertFalse(os.path.exists(target_dir + os.path.sep + filename))
-        self.assertTrue(os.path.exists(target_dir + os.path.sep + expected))
-        self.assertTrue(ZIP_FILE_MAGIC in get_magic(target_dir + os.path.sep + expected))
+        self.run_test(filename, expected)
         
     def test_convert_xlt(self):
         filename = 'xlt.xlt'
         expected = 'xlt.xltx'
-        self.copy_file(filename)
-        
-        issue_dir = self.outpath('issue')
-        target_dir = self.outpath('source')
-        self.assertEqual((1, 0), process_folder(issue_dir, target_dir))
-        self.assertFalse(os.path.exists(target_dir + os.path.sep + filename))
-        self.assertTrue(os.path.exists(target_dir + os.path.sep + expected))
-        self.assertTrue(ZIP_FILE_MAGIC in get_magic(target_dir + os.path.sep + expected))
+        self.run_test(filename, expected)
         
     def test_convert_xlt_fake_xltx(self):
         filename = 'xlt_fake_xltx.xltx'
@@ -218,45 +152,23 @@ class FileConversionTests(TestCase):
         issue_dir = self.outpath('issue')
         target_dir = self.outpath('source')
         self.assertEqual((1, 0), process_folder(issue_dir, target_dir))
-        self.assertFalse(os.path.exists(target_dir + os.path.sep + filename))
         self.assertTrue(os.path.exists(target_dir + os.path.sep + expected))
         self.assertTrue(ZIP_FILE_MAGIC in get_magic(target_dir + os.path.sep + expected))
         
     def test_convert_xltm(self):
         filename = 'xltm.xltm'
         expected = 'xltm.xltx'
-        self.copy_file(filename)
-        
-        issue_dir = self.outpath('issue')
-        target_dir = self.outpath('source')
-        self.assertEqual((1, 0), process_folder(issue_dir, target_dir))
-        self.assertFalse(os.path.exists(target_dir + os.path.sep + filename))
-        self.assertTrue(os.path.exists(target_dir + os.path.sep + expected))
-        self.assertTrue(ZIP_FILE_MAGIC in get_magic(target_dir + os.path.sep + expected))
+        self.run_test(filename, expected)
         
     def test_convert_ods(self):
         filename = 'ods.ods'
         expected = 'ods.xlsx'
-        self.copy_file(filename)
-        
-        issue_dir = self.outpath('issue')
-        target_dir = self.outpath('source')
-        self.assertEqual((1, 0), process_folder(issue_dir, target_dir))
-        self.assertFalse(os.path.exists(target_dir + os.path.sep + filename))
-        self.assertTrue(os.path.exists(target_dir + os.path.sep + expected))
-        self.assertTrue(ZIP_FILE_MAGIC in get_magic(target_dir + os.path.sep + expected))
+        self.run_test(filename, expected)
         
     def test_convert_pot(self):
         filename = 'pot.pot'
         expected = 'pot.potx'
-        self.copy_file(filename)
-        
-        issue_dir = self.outpath('issue')
-        target_dir = self.outpath('source')
-        self.assertEqual((1, 0), process_folder(issue_dir, target_dir))
-        self.assertFalse(os.path.exists(target_dir + os.path.sep + filename))
-        self.assertTrue(os.path.exists(target_dir + os.path.sep + expected))
-        self.assertTrue(ZIP_FILE_MAGIC in get_magic(target_dir + os.path.sep + expected))
+        self.run_test(filename, expected)
         
     def test_convert_pot_fake_potx(self):
         filename = 'pot_fake_potx.potx'
@@ -273,26 +185,12 @@ class FileConversionTests(TestCase):
     def test_convert_potm(self):
         filename = 'potm.potm'
         expected = 'potm.potx'
-        self.copy_file(filename)
-        
-        issue_dir = self.outpath('issue')
-        target_dir = self.outpath('source')
-        self.assertEqual((1, 0), process_folder(issue_dir, target_dir))
-        self.assertFalse(os.path.exists(target_dir + os.path.sep + filename))
-        self.assertTrue(os.path.exists(target_dir + os.path.sep + expected))
-        self.assertTrue(ZIP_FILE_MAGIC in get_magic(target_dir + os.path.sep + expected))
+        self.run_test(filename, expected)
         
     def test_convert_pps(self):
         filename = 'pps.pps'
         expected = 'pps.ppsx'
-        self.copy_file(filename)
-        
-        issue_dir = self.outpath('issue')
-        target_dir = self.outpath('source')
-        self.assertEqual((1, 0), process_folder(issue_dir, target_dir))
-        self.assertFalse(os.path.exists(target_dir + os.path.sep + filename))
-        self.assertTrue(os.path.exists(target_dir + os.path.sep + expected))
-        self.assertTrue(ZIP_FILE_MAGIC in get_magic(target_dir + os.path.sep + expected))
+        self.run_test(filename, expected)
         
     def test_convert_pps_fake_ppsx(self):
         filename = 'pps_fake_ppsx.ppsx'
@@ -309,26 +207,12 @@ class FileConversionTests(TestCase):
     def test_convert_ppsm(self):
         filename = 'ppsm.ppsm'
         expected = 'ppsm.ppsx'
-        self.copy_file(filename)
-        
-        issue_dir = self.outpath('issue')
-        target_dir = self.outpath('source')
-        self.assertEqual((1, 0), process_folder(issue_dir, target_dir))
-        self.assertFalse(os.path.exists(target_dir + os.path.sep + filename))
-        self.assertTrue(os.path.exists(target_dir + os.path.sep + expected))
-        self.assertTrue(ZIP_FILE_MAGIC in get_magic(target_dir + os.path.sep + expected)) 
+        self.run_test(filename, expected)
        
     def test_convert_ppt(self):
         filename = 'ppt.ppt'
         expected = 'ppt.pptx'
-        self.copy_file(filename)
-        
-        issue_dir = self.outpath('issue')
-        target_dir = self.outpath('source')
-        self.assertEqual((1, 0), process_folder(issue_dir, target_dir))
-        self.assertFalse(os.path.exists(target_dir + os.path.sep + filename))
-        self.assertTrue(os.path.exists(target_dir + os.path.sep + expected))
-        self.assertTrue(ZIP_FILE_MAGIC in get_magic(target_dir + os.path.sep + expected)) 
+        self.run_test(filename, expected)
         
     def test_convert_ppt_fake_pptx(self):
         filename = 'ppt_fake_pptx.pptx'
@@ -356,26 +240,12 @@ class FileConversionTests(TestCase):
     def test_convert_pptm(self):
         filename = 'pptm.pptm'
         expected = 'pptm.pptx'
-        self.copy_file(filename)
-        
-        issue_dir = self.outpath('issue')
-        target_dir = self.outpath('source')
-        self.assertEqual((1, 0), process_folder(issue_dir, target_dir))
-        self.assertFalse(os.path.exists(target_dir + os.path.sep + filename))
-        self.assertTrue(os.path.exists(target_dir + os.path.sep + expected))
-        self.assertTrue(ZIP_FILE_MAGIC in get_magic(target_dir + os.path.sep + expected)) 
+        self.run_test(filename, expected)
         
     def test_convert_odp(self):
         filename = 'odp.odp'
         expected = 'odp.pptx'
-        self.copy_file(filename)
-        
-        issue_dir = self.outpath('issue')
-        target_dir = self.outpath('source')
-        self.assertEqual((1, 0), process_folder(issue_dir, target_dir))
-        self.assertFalse(os.path.exists(target_dir + os.path.sep + filename))
-        self.assertTrue(os.path.exists(target_dir + os.path.sep + expected))
-        self.assertTrue(ZIP_FILE_MAGIC in get_magic(target_dir + os.path.sep + expected)) 
+        self.run_test(filename, expected)
 
     def test_convert_msg_clean(self):
         filename = 'clean_attachment.msg'
@@ -427,6 +297,7 @@ class FileConversionTests(TestCase):
         self.assertFalse(os.path.exists(target_dir + os.path.sep + filename))
         self.assertTrue(os.path.exists(target_dir + os.path.sep + expected))
     
+    # TODO: create a test that checks each file extension in malicious_file_filter
     def test_convert_bat(self):
         filename = 'bat.bat'
         expected = 'bat.bat.txt'
