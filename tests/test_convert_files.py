@@ -342,7 +342,7 @@ class FileConversionTests(TestCase):
         self.assertTrue(os.path.exists(target_dir + os.path.sep + expected))
         self.assertTrue(ZIP_FILE_MAGIC in get_magic(target_dir + os.path.sep + expected)) 
         
-     def test_convert_ppt_password(self):
+    def test_convert_ppt_password(self):
         filename = 'ppt_password.ppt'
         expected = 'ppt_password.ppt.txt'
         self.copy_file(filename)
@@ -387,8 +387,8 @@ class FileConversionTests(TestCase):
         self.assertEqual((1, 0), process_folder(issue_dir, target_dir))
         self.assertFalse(os.path.exists(target_dir + os.path.sep + filename))
         self.assertTrue(os.path.exists(target_dir + os.path.sep + expected))
-        self.assertTrue(os.path.exists(target_dir + os.path.sep + 'clean_attachment.test_clean_attachment.docx')
-        
+        self.assertTrue(os.path.exists(target_dir + os.path.sep + 'clean_attachment.test_clean_attachment.docx'))
+
     def test_convert_msg_malicious(self):
         filename = 'malicious_attachment.msg'
         expected = 'malicious_attachment.pdf'
@@ -399,7 +399,7 @@ class FileConversionTests(TestCase):
         self.assertEqual((1, 0), process_folder(issue_dir, target_dir))
         self.assertFalse(os.path.exists(target_dir + os.path.sep + filename))
         self.assertTrue(os.path.exists(target_dir + os.path.sep + expected))
-        self.assertTrue(os.path.exists(target_dir + os.path.sep + 'malicious_attachment_attachment.doc.docx')
+        self.assertTrue(os.path.exists(target_dir + os.path.sep + 'malicious_attachment_attachment.doc.docx'))
         
     def test_convert_zip(self):
         filename = 'doc.zip'

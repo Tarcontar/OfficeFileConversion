@@ -28,10 +28,6 @@ issue_target_dir = ''
 legacy_target_dir = ''
 logfile = None
 
-source = ''
-
-python_temp = 'C:\\Users\\admin\\AppData\\Local\\Temp\\gen_py'
-
 word_filter = ['doc', 'docm', 'dot', 'dotm', 'odt']
 word_fake_filter = ['docx', 'dotx']
 excel_filter = ['xls', 'xlsm', 'xlsb', 'xlt', 'xltm', 'ods']
@@ -43,7 +39,7 @@ archive_filter = ['zip', 'rar', '7z']
 malicious_filter = ['pst', 'xlam', 'osd', 'py', 'exe', 'msi', 'bat', 'reg', 'pol', 'ps1', 'psm1', 'psd1', 'ps1xml', 'pssc', 'psrc', 'cdxml']
 
 
- #TODO: get from sys.argv
+#TODO: get from sys.argv
 process_word = True
 process_excel = True
 process_ppt = True
@@ -408,7 +404,7 @@ def setup_office_app(func):
     try:
         func()
     except AttributeError:
-        shutil.rmtree(python_temp)
+        shutil.rmtree(f'C:\\Users\\{os.getlogin()}\\AppData\\Local\\Temp\\gen_py')
         func()
       
       
