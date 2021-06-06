@@ -48,6 +48,11 @@ class FileConversionTests(TestCase):
         filename = 'docx.docx'
         expected = 'docx.docx'
         self.run_test(filename, expected, result=(0, 0), check_file=False)
+        
+    def test_convert_docx_password(self):
+        filename = 'docx_password.docx'
+        expected = 'docx_password.docx'
+        self.run_test(filename, expected, result=(0, 0), check_file=False, check_magic=False)
 
     def test_convert_doc_fake_docx(self):
         filename = 'doc_fake_docx.docx'
@@ -87,6 +92,16 @@ class FileConversionTests(TestCase):
         filename = 'xls.xls'
         expected = 'xls.xlsx'
         self.run_test(filename, expected)
+        
+    def test_convert_xlsx(self):
+        filename = 'xlsx.xlsx'
+        expected = 'xlsx.xlsx'
+        self.run_test(filename, expected, result=(0, 0), check_file=False)
+        
+    def test_convert_xlsx_password(self):
+        filename = 'xlsx_password.xlsx'
+        expected = 'xlsx_password.xlsx'
+        self.run_test(filename, expected, result=(0, 0), check_file=False, check_magic=False)
         
     def test_convert_xls_fake_xlsx(self):
         filename = 'xls_fake_xlsx.xlsx'

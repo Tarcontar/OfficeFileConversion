@@ -24,7 +24,6 @@ XLSX_FILE_FORMAT = 51
 XLTX_FILE_FORMAT = 54
 
 ZIP_FILE_MAGIC = '504b0304'
-#EXE_FILE_MAGICS = ['4d5a', '5a4d']
 
 issue_target_dir = ''
 legacy_target_dir = ''
@@ -46,7 +45,7 @@ process_word = True
 process_excel = True
 process_ppt = True
 process_outlook = True
-process_fakefiles = True
+process_fakefiles = False #not supported right now
 process_malicious = True
 process_archives = True
 
@@ -83,7 +82,7 @@ def setup_outlook():
 def get_magic(path):
     with open (path, 'rb') as myfile:
         header = myfile.read(4)
-        return str(binascii.hexlify(header))
+        return binascii.hexlify(header).decode('ascii')
 
 
 def copy_file(source, target):
@@ -108,7 +107,7 @@ def handle_error(path):
 def handle_fake_files(path, extension, extensions_filter):
     if not extension in extensions_filter:
         return path, True
-    if ZIP_FILE_MAGIC in get_magic(path):
+    if get_magic(path) == ZIP_FILE_MAGIC:
         return path, False
     print('WARNING: fake file detected')
     os.rename(path, path[:-1])
@@ -178,6 +177,7 @@ def process_outlook(source):
     
     msg.Close(1)
 
+
 def convert_to_zip(source, extension):
     target = source[:-3] if extension == '7z' else source[:-4]
     if extension == '7z':
@@ -191,6 +191,7 @@ def convert_to_zip(source, extension):
     os.remove(source)
     shutil.make_archive(target, 'zip', target)
     return target + '.zip'
+
 
 def process_zip(source, extension):
     if extension in ['7z', 'rar']:
@@ -256,14 +257,12 @@ def process_file(path):
         return 0
         
     extension = pathlib.Path(path).suffix[1:].lower()
-    #print (os.path.basename(path))
-    
+
     if process_word and (extension in word_filter or process_fakefiles and extension in word_fake_filter):
         path, processing_needed = handle_fake_files(path, extension, word_fake_filter)
         if not processing_needed:
             return 0
         
-        #print (path)
         if extension in ['dotx', 'dot', 'dotm']:
             format = DOTX_FILE_FORMAT
         else:
@@ -284,7 +283,6 @@ def process_file(path):
         if not processing_needed:
             return 0
             
-        #print (path)
         if extension in ['xltx', 'xlt', 'xltm']:
             format = XLTX_FILE_FORMAT
         else:
@@ -305,7 +303,6 @@ def process_file(path):
         if not processing_needed:
             return 0
         
-        #print (path)
         if extension in ['potx', 'pot', 'potm']:
             format = POTX_FILE_FORMAT
         elif extension in ['ppsx', 'pps', 'ppsm']:
@@ -328,7 +325,6 @@ def process_file(path):
         return 1
         
     elif process_malicious and extension in malicious_filter:
-        #print (path)
         if 'Win-Plantafel2' in path:
             return 0
         
