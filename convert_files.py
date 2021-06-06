@@ -115,188 +115,115 @@ def handle_fake_files(path, extension, extensions_filter):
     
 
 def process_word(source, target, format):
-    try:
-        if word is None:   
-            setup_word()
-        doc = word.Documents.Open(source, ConfirmConversions=False, Visible=False, PasswordDocument="invalid")
-        doc.Activate()
-        word.ActiveDocument.SaveAs(target, format)
-        doc.Close(False)
-        os.remove(source)
-        return
-    except WindowsError as e:
-        if e.winerror == ACCESS_DENIED:
-            return
-        print(e)
-    except pythoncom.com_error as error:
-        if error.args[0] == -2147352567:
-            print('-> file is password protected')
-        else:
-            print(error)
-    except Exception as e:
-        print(e)
-        
-    handle_error(source)
-    print('Exception occured with word')
+    if word is None:   
+        setup_word()
+    doc = word.Documents.Open(source, ConfirmConversions=False, Visible=False, PasswordDocument="invalid")
+    doc.Activate()
+    word.ActiveDocument.SaveAs(target, format)
+    doc.Close(False)
+    os.remove(source)
     
     
 def process_excel(source, target, format):
-    try:
-        if excel is None:
-            setup_excel()
-        wb = excel.Workbooks.Open(source, UpdateLinks=False, Password='', WriteResPassword='')
-        wb.Application.DisplayAlerts = False
-        wb.Application.EnableEvents = False
-        wb.SaveAs(target, FileFormat=format, ConflictResolution=2)
-        wb.Close()
-        os.remove(source)
-        return
-    except WindowsError as e:
-        if e.winerror == ACCESS_DENIED:
-            return
-        print(e)
-    except pythoncom.com_error as error:
-        if error.args[0] == -2147352567:
-            print('-> file is password protected')
-        else:
-            print(error)
-    except Exception as e:
-        print(e)
-        
-    print('Exception occured in excel')
-    handle_error(source)
+    if excel is None:
+        setup_excel()
+    wb = excel.Workbooks.Open(source, UpdateLinks=False, Password='', WriteResPassword='')
+    wb.Application.DisplayAlerts = False
+    wb.Application.EnableEvents = False
+    wb.SaveAs(target, FileFormat=format, ConflictResolution=2)
+    wb.Close()
+    os.remove(source)
     
     
 def process_powerpoint(source, target, format):
-    try:
-        if ppt is None:
-            setup_ppt()
-        presentation = ppt.Presentations.Open(source + ':::', WithWindow=False)
-        presentation.SaveAs(target, format)
-        presentation.Close()
-        os.remove(source)
-        return
-    except WindowsError as e:
-        if e.winerror == ACCESS_DENIED:
-            return
-        print(e)
-    except pythoncom.com_error as error:
-        if error.args[0] == -2147352567:
-            print('-> file is password protected')
-        else:
-            print(error)
-    except Exception as e:
-        print(e)
+    if ppt is None:
+        setup_ppt()
+    presentation = ppt.Presentations.Open(source + ':::', WithWindow=False)
+    presentation.SaveAs(target, format)
+    presentation.Close()
+    os.remove(source)
 
-    print('Exception occured in powerpoint')
-    handle_error(source)
-        
-        
+
 def process_outlook(source):
-    try:
-        if outlook is None:
-            setup_outlook()
- 
-        tmp_file = legacy_target_dir + source[2:]
-        copy_file(source, tmp_file) # TODO: only workaround for outlook not closing file properly
-        os.remove(source)
-        msg = outlook.OpenSharedItem(tmp_file)
-        
-        html_path = source[:-4] + '.html'
-        msg.SaveAs(html_path, constants.olHTML)
-        doc = word.Documents.Open(html_path)
-        doc.ExportAsFixedFormat(source[:-4] + '.pdf', 17)
-        doc.Close(False)
-        os.remove(html_path)
-        
-        if os.path.exists(source[:-4] + '_files'):
-            shutil.rmtree(source[:-4] + '_files')
-        if os.path.exists(source[:-4] + '-Dateien'):
-            shutil.rmtree(source[:-4] + '-Dateien')
-                
-        if not msg.Attachments:
-            return
-        
-        count = 0
-        for attachment in msg.Attachments:
-            path = source[:-3] + attachment.FileName
-            attachment.SaveAsFile(path)
-            count += process_file(path)
-        
-        msg.Close(1)
-        return
+    if outlook is None:
+        setup_outlook()
+
+    tmp_file = legacy_target_dir + source[2:]
+    copy_file(source, tmp_file) # TODO: only workaround for outlook not closing file properly
+    os.remove(source)
+    msg = outlook.OpenSharedItem(tmp_file)
+    
+    html_path = source[:-4] + '.html'
+    msg.SaveAs(html_path, constants.olHTML)
+    doc = word.Documents.Open(html_path)
+    doc.ExportAsFixedFormat(source[:-4] + '.pdf', 17)
+    doc.Close(False)
+    os.remove(html_path)
+    
+    if os.path.exists(source[:-4] + '_files'):
+        shutil.rmtree(source[:-4] + '_files')
+    if os.path.exists(source[:-4] + '-Dateien'):
+        shutil.rmtree(source[:-4] + '-Dateien')
             
-    except WindowsError as e:
-        if e.winerror == ACCESS_DENIED:
-            return
-        print(e)
-    except pythoncom.com_error as error:
-        print(error)
-    except Exception as e:
-        print(e)
-        
-    print('Exception occured in outlook')
-    handle_error(source) 
-        
+    if not msg.Attachments:
+        return
+    
+    count = 0
+    for attachment in msg.Attachments:
+        path = source[:-3] + attachment.FileName
+        attachment.SaveAsFile(path)
+        count += process_file(path)
+    
+    msg.Close(1)
+   
 
 def process_zip(source):
-    try:
-        zip = zipfile.ZipFile(source)
-        for zinfo in zip.infolist():
-            is_encrypted = zinfo.flag_bits & 0x1 
-            if is_encrypted:
-                print (f'WARNING: {source} is encrypted!')
-                zip.close()
-                handle_error(source)
-                return 0
-                
-        needs_processing = False
-        for file in zip.namelist():
-            extension = pathlib.Path(file).suffix[1:].lower()
-            
-            if extension in word_filter or extension in excel_filter \
-                        or extension in ppt_filter or extension in outlook_filter \
-                        or extension in malicious_filter or extension in archive_filter:
-                needs_processing = True
-                break
-            if process_fakefiles and (extension in word_fake_filter \
-                        or extension in excel_fake_filter \
-                        or extension in ppt_fake_filter):
-                needs_processing = True
-                break
-            
-        if not needs_processing:
-            return 1
-            
-        target_path = source[:-4]
-        print('## extracting...')
-        zip.extractall(target_path)
-        zip.close()
-            
-        count = 0
-        for path in pathlib.Path(target_path).rglob('*.*'):
-            try:
-                count += process_file(path)
-            except Exception as e:
-                handle_error(source)
-                shutil.rmtree(target_path)
-                return 0
-                  
-        os.remove(source)
-        print('## compressing...')
-        shutil.make_archive(target_path, 'zip', target_path)
-        shutil.rmtree(target_path)
-        return count
-
-    except WindowsError as e:
-        if e.winerror == ACCESS_DENIED:
+    zip = zipfile.ZipFile(source)
+    for zinfo in zip.infolist():
+        is_encrypted = zinfo.flag_bits & 0x1 
+        if is_encrypted:
+            print (f'WARNING: {source} is encrypted!')
+            zip.close()
+            handle_error(source)
             return 0
-        print(e)
+            
+    needs_processing = False
+    for file in zip.namelist():
+        extension = pathlib.Path(file).suffix[1:].lower()
         
-    except Exception as e:
-        print(e)
-        handle_error(source)
-        return 0
+        if extension in word_filter or extension in excel_filter \
+                    or extension in ppt_filter or extension in outlook_filter \
+                    or extension in malicious_filter or extension in archive_filter:
+            needs_processing = True
+            break
+        if process_fakefiles and (extension in word_fake_filter \
+                    or extension in excel_fake_filter \
+                    or extension in ppt_fake_filter):
+            needs_processing = True
+            break
+        
+    if not needs_processing:
+        return 1
+        
+    target_path = source[:-4]
+    print('## extracting...')
+    zip.extractall(target_path)
+    zip.close()
+        
+    count = 0
+    for path in pathlib.Path(target_path).rglob('*.*'):
+        try:
+            count += process_file(path)
+        except Exception as e:
+            handle_error(source)
+            shutil.rmtree(target_path)
+            return 0
+              
+    os.remove(source)
+    print('## compressing...')
+    shutil.make_archive(target_path, 'zip', target_path)
+    shutil.rmtree(target_path)
+    return count
 
 
 def process_file(path):
@@ -394,9 +321,10 @@ def process_file(path):
             placeholder.close()
         copy_file(path, issue_target_dir + path[2:])
         os.remove(path)
+        return 1
         
     elif process_archives and extension in archive_filter:
-        return process_zip(word, excel, ppt, outlook, path)
+        return process_zip(path)
     return 0
     
     
@@ -452,24 +380,17 @@ def process_folder(target_dir, source):
     for path in paths:
         try:
             file_count += process_file(path)
+        except WindowsError as e:
+            if e.winerror == ACCESS_DENIED:
+                # TODO: can we copy in that case?
+                print(e)
+                input()
         except Exception as e:
             issue_count += 1
-            path = str(path)
-            if hasattr(e, 'message'):
-                error_msg = f'ERROR: could not process \'{path}\' {e.message}\n'
-            else:
-                error_msg = f'ERROR: could not process \'{path}\'\n'
-            print(error_msg)
-            logfile.write(error_msg)
-            print('press any key to continue...')
-            #input()
-            try:
-                os.remove(path)
-            except:
-                pass
+            handle_error(str(path))
         except KeyboardInterrupt:
             break
-
+            
     shutdown_office_app(word.Application)
     shutdown_office_app(excel.Application)
     shutdown_office_app(ppt)
