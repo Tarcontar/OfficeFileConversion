@@ -5,6 +5,8 @@ import binascii
 import shutil
 import pythoncom
 import zipfile
+import py7zr
+from pyunpack import Archive
 import win32com.client as win32
 from win32com.client import constants
 import win32com
@@ -36,7 +38,7 @@ ppt_filter = ['ppt', 'pptm', 'pot', 'potm', 'pps', 'ppsm', 'odp']
 ppt_fake_filter = ['pptx', 'potx', 'ppsx']
 outlook_filter = ['msg']
 archive_filter = ['zip', 'rar', '7z']
-malicious_filter = ['pst', 'xlam', 'osd', 'py', 'exe', 'msi', 'bat', 'reg', 'pol', 'ps1', 'psm1', 'psd1', 'ps1xml', 'pssc', 'psrc', 'cdxml']
+malicious_filter = ['pst', 'xlam', 'osd', 'py', 'exe', 'msi', 'bat', 'reg', 'pol', 'ps1', 'psm1', 'psd1', 'pssc', 'psrc']
 
 
 #TODO: get from sys.argv
@@ -175,9 +177,25 @@ def process_outlook(source):
         count += process_file(path)
     
     msg.Close(1)
-   
 
-def process_zip(source):
+def convert_to_zip(source, extension):
+    target = source[:-3] if extension == '7z' else source[:-4]
+    if extension == '7z':
+        with py7zr.SevenZipFile(source, mode='r') as z:
+            if z.needs_password():
+                raise Exception('file is password protected')
+            z.extractall(target)
+    else:
+        os.makedirs(target, exist_ok = True)
+        Archive(source).extractall(target)
+    os.remove(source)
+    shutil.make_archive(target, 'zip', target)
+    return target + '.zip'
+
+def process_zip(source, extension):
+    if extension in ['7z', 'rar']:
+        source = convert_to_zip(source, extension)
+    
     zip = zipfile.ZipFile(source)
     for zinfo in zip.infolist():
         is_encrypted = zinfo.flag_bits & 0x1 
@@ -324,7 +342,7 @@ def process_file(path):
         return 1
         
     elif process_archives and extension in archive_filter:
-        return process_zip(path)
+        return process_zip(path, extension)
     return 0
     
     
@@ -381,12 +399,16 @@ def process_folder(target_dir, source):
         try:
             file_count += process_file(path)
         except WindowsError as e:
+            print(e)
             if e.winerror == ACCESS_DENIED:
                 # TODO: can we copy in that case?
                 print(e)
                 input()
+                continue
+            raise e
         except Exception as e:
             issue_count += 1
+            print(e)
             handle_error(str(path))
         except KeyboardInterrupt:
             break
@@ -397,11 +419,9 @@ def process_folder(target_dir, source):
     shutdown_office_app(outlook)
 
     logfile.close()
-    print(f'converted {file_count} files')
-    print(f'had {issue_count} issues')
+    print(f'converted {file_count} files with {issue_count} issues')
     return (file_count, issue_count)
-    
-    
+
     
 if __name__ == "__main__":
     process_folder(sys.argv[1], sys.argv[2])

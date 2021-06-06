@@ -12,14 +12,16 @@ from convert_files import process_folder, get_magic, ZIP_FILE_MAGIC
 
 class FileConversionTests(TestCase):
     def copy_file(self, filename):
-        source_file = up(self.relpath()) + os.path.sep +  'source' + os.path.sep + filename
-        shutil.copyfile(source_file, self.outpath('source') + os.path.sep + filename)
+        source_file = self.relpath() + os.path.sep +  'testfiles' + os.path.sep + filename
+        print(source_file)
+        print(self.outpath('testfiles') + os.path.sep + filename)
+        shutil.copyfile(source_file, self.outpath('testfiles') + os.path.sep + filename)
         
     def run_test(self, filename, expected, result=(1, 0), check_file=True, check_magic=True):
         self.copy_file(filename)
         
         issue_dir = self.outpath('issue')
-        target_dir = self.outpath('source')
+        target_dir = self.outpath('testfiles')
         self.assertEqual(result, process_folder(issue_dir, target_dir))
         if check_file:
             self.assertFalse(os.path.exists(target_dir + os.path.sep + filename))
@@ -77,7 +79,7 @@ class FileConversionTests(TestCase):
         self.copy_file(filename)
         
         issue_dir = self.outpath('issue')
-        target_dir = self.outpath('source')
+        target_dir = self.outpath('testfiles')
         self.assertEqual((0, 0), process_folder(issue_dir, target_dir))
         self.assertFalse(os.path.exists(target_dir + os.path.sep + filename))
        
@@ -187,7 +189,7 @@ class FileConversionTests(TestCase):
         self.copy_file(filename)
         
         issue_dir = self.outpath('issue')
-        target_dir = self.outpath('source')
+        target_dir = self.outpath('testfiles')
         self.assertEqual((1, 0), process_folder(issue_dir, target_dir))
         self.assertFalse(os.path.exists(target_dir + os.path.sep + filename))
         self.assertTrue(os.path.exists(target_dir + os.path.sep + expected))
@@ -199,19 +201,49 @@ class FileConversionTests(TestCase):
         self.copy_file(filename)
         
         issue_dir = self.outpath('issue')
-        target_dir = self.outpath('source')
+        target_dir = self.outpath('testfiles')
         self.assertEqual((1, 0), process_folder(issue_dir, target_dir))
         self.assertFalse(os.path.exists(target_dir + os.path.sep + filename))
         self.assertTrue(os.path.exists(target_dir + os.path.sep + expected))
         self.assertTrue(os.path.exists(target_dir + os.path.sep + 'malicious_attachment.doc.docx'))
         
     def test_convert_zip(self):
-        filename = 'doc.zip'
-        expected = 'doc.zip'
+        filename = 'zip.zip'
+        expected = 'zip.zip'
         self.copy_file(filename)
         
         issue_dir = self.outpath('issue')
-        target_dir = self.outpath('source')
+        target_dir = self.outpath('testfiles')
+        self.assertEqual((1, 0), process_folder(issue_dir, target_dir))
+        self.assertFalse(os.path.exists(target_dir + os.path.sep + 'doc'))
+        self.assertTrue(os.path.exists(target_dir + os.path.sep + expected))
+        
+        zip = zipfile.ZipFile(target_dir + os.path.sep + expected)
+        self.assertFalse('doc.doc' in zip.namelist())
+        self.assertTrue('doc.docx' in zip.namelist())
+        
+    def test_convert_7z(self):
+        filename = '7z.7z'
+        expected = '7z.zip'
+        self.copy_file(filename)
+        
+        issue_dir = self.outpath('issue')
+        target_dir = self.outpath('testfiles')
+        self.assertEqual((1, 0), process_folder(issue_dir, target_dir))
+        self.assertFalse(os.path.exists(target_dir + os.path.sep + 'doc'))
+        self.assertTrue(os.path.exists(target_dir + os.path.sep + expected))
+        
+        zip = zipfile.ZipFile(target_dir + os.path.sep + expected)
+        self.assertFalse('doc.doc' in zip.namelist())
+        self.assertTrue('doc.docx' in zip.namelist())
+        
+    def test_convert_rar(self):
+        filename = 'rar.rar'
+        expected = 'rar.zip'
+        self.copy_file(filename)
+        
+        issue_dir = self.outpath('issue')
+        target_dir = self.outpath('testfiles')
         self.assertEqual((1, 0), process_folder(issue_dir, target_dir))
         self.assertFalse(os.path.exists(target_dir + os.path.sep + 'doc'))
         self.assertTrue(os.path.exists(target_dir + os.path.sep + expected))
@@ -221,17 +253,38 @@ class FileConversionTests(TestCase):
         self.assertTrue('doc.docx' in zip.namelist())
         
     def test_convert_zip_password(self):
-        filename = 'doc_password.zip'
-        expected = 'doc_password.zip.txt'
+        filename = 'zip_password.zip'
+        expected = 'zip_password.zip.txt'
         self.copy_file(filename)
         
         issue_dir = self.outpath('issue')
-        target_dir = self.outpath('source')
+        target_dir = self.outpath('testfiles')
         self.assertEqual((0, 0), process_folder(issue_dir, target_dir))
         self.assertFalse(os.path.exists(target_dir + os.path.sep + filename))
         self.assertTrue(os.path.exists(target_dir + os.path.sep + expected))
-    
-    # TODO: create a test that checks each file extension in malicious_file_filter
+        
+    def test_convert_7z_password(self):
+        filename = '7z_password.7z'
+        expected = '7z_password.7z.txt'
+        self.copy_file(filename)
+        
+        issue_dir = self.outpath('issue')
+        target_dir = self.outpath('testfiles')
+        self.assertEqual((0, 1), process_folder(issue_dir, target_dir))
+        self.assertFalse(os.path.exists(target_dir + os.path.sep + filename))
+        self.assertTrue(os.path.exists(target_dir + os.path.sep + expected))
+        
+    def test_convert_rar_password(self):
+        filename = 'rar_password.rar'
+        expected = 'rar_password.rar.txt'
+        self.copy_file(filename)
+        
+        issue_dir = self.outpath('issue')
+        target_dir = self.outpath('testfiles')
+        self.assertEqual((0, 1), process_folder(issue_dir, target_dir))
+        self.assertFalse(os.path.exists(target_dir + os.path.sep + filename))
+        self.assertTrue(os.path.exists(target_dir + os.path.sep + expected))
+        
     def test_convert_bat(self):
         filename = 'bat.bat'
         expected = 'bat.bat.txt'
@@ -241,8 +294,66 @@ class FileConversionTests(TestCase):
         filename = 'exe.exe'
         expected = 'exe.exe.txt'
         self.run_test(filename, expected, check_magic=False)
+        
+    def test_convert_msi(self):
+        filename = 'msi.msi'
+        expected = 'msi.msi.txt'
+        self.run_test(filename, expected, check_magic=False)
+        
+    def test_convert_pst(self):
+        filename = 'pst.pst'
+        expected = 'pst.pst.txt'
+        self.run_test(filename, expected, check_magic=False)
+        
+    def test_convert_xlam(self):
+        filename = 'xlam.xlam'
+        expected = 'xlam.xlam.txt'
+        self.run_test(filename, expected, check_magic=False)
+        
+    def test_convert_osd(self):
+        filename = 'osd.osd'
+        expected = 'osd.osd.txt'
+        self.run_test(filename, expected, check_magic=False)
+        
+    def test_convert_py(self):
+        filename = 'py.py'
+        expected = 'py.py.txt'
+        self.run_test(filename, expected, check_magic=False)
     
+    def test_convert_reg(self):
+        filename = 'reg.reg'
+        expected = 'reg.reg.txt'
+        self.run_test(filename, expected, check_magic=False)
+        
+    def test_convert_pol(self):
+        filename = 'pol.pol'
+        expected = 'pol.pol.txt'
+        self.run_test(filename, expected, check_magic=False)
+        
+    def test_convert_ps1(self):
+        filename = 'ps1.ps1'
+        expected = 'ps1.ps1.txt'
+        self.run_test(filename, expected, check_magic=False)
     
+    def test_convert_psm1(self):
+        filename = 'psm1.psm1'
+        expected = 'psm1.psm1.txt'
+        self.run_test(filename, expected, check_magic=False)
+        
+    def test_convert_psd1(self):
+        filename = 'psd1.psd1'
+        expected = 'psd1.psd1.txt'
+        self.run_test(filename, expected, check_magic=False)
+        
+    def test_convert_pssc(self):
+        filename = 'pssc.pssc'
+        expected = 'pssc.pssc.txt'
+        self.run_test(filename, expected, check_magic=False)
+        
+    def test_convert_psrc(self):
+        filename = 'psrc.psrc'
+        expected = 'psrc.psrc.txt'
+        self.run_test(filename, expected, check_magic=False)
 
 if __name__ == '__main__':
     unittest.main()

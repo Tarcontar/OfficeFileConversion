@@ -25,8 +25,11 @@ class TestCase(unittest.TestCase):
         namespace = self.id().split('.')
         testname = namespace[-2] + '.' + namespace[-1]
         print(testname)
-        if not os.path.exists(self.__filepath):
-            os.makedirs(self.__filepath)
+        
+        if os.path.exists(self.__filepath):
+            shutil.rmtree(self.__filepath)
+            
+        os.makedirs(self.__filepath)
             
     def tearDown(self):
         if os.path.exists(self.__filepath):
