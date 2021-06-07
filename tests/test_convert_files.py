@@ -13,8 +13,6 @@ from convert_files import process_folder, get_magic, ZIP_FILE_MAGIC
 class FileConversionTests(TestCase):
     def copy_file(self, filename):
         source_file = self.relpath() + os.path.sep +  'testfiles' + os.path.sep + filename
-        print(source_file)
-        print(self.outpath('testfiles') + os.path.sep + filename)
         shutil.copyfile(source_file, self.outpath('testfiles') + os.path.sep + filename)
         
     def run_test(self, filename, expected, result=(1, 0), check_file=True, check_magic=True):

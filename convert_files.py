@@ -362,6 +362,24 @@ def shutdown_office_app(app):
         app.Quit()
     except:
         pass
+        
+  
+def shutdown():
+    global word
+    shutdown_office_app(word.Application)
+    word = None
+    global excel
+    shutdown_office_app(excel.Application)
+    excel = None
+    global ppt
+    shutdown_office_app(ppt)
+    ppt = None
+    global outlook
+    shutdown_office_app(outlook)
+    outlook = None
+
+    global logfile
+    logfile.close()
  
  
 def process_folder(target_dir, source):
@@ -378,20 +396,26 @@ def process_folder(target_dir, source):
     else:
         logfile = open(logfile_path, 'w')
 
-    print(f'processing all {word_filter} files in \'{source}\'')
-    print(f'processing all {excel_filter} files in \'{source}\'')
-    print(f'processing all {ppt_filter} files in \'{source}\'')
-    print(f'processing all {outlook_filter} files in \'{source}\'')
-    print(f'processing all {malicious_filter} files in \'{source}\'')
+    #print(f'processing all {word_filter} files in \'{source}\'')
+    #print(f'processing all {excel_filter} files in \'{source}\'')
+    #print(f'processing all {ppt_filter} files in \'{source}\'')
+    #print(f'processing all {outlook_filter} files in \'{source}\'')
+    #print(f'processing all {malicious_filter} files in \'{source}\'')
+    print(f'processing folder \'{source}\'')
     print('do NOT close any opening office application windows (minimize them instead)')
  
     file_count = 0
     issue_count = 0
     
-    setup_office_app(setup_word)
-    setup_office_app(setup_excel)
-    setup_office_app(setup_ppt)
-    setup_office_app(setup_outlook)
+    try:
+        setup_office_app(setup_word)
+        setup_office_app(setup_excel)
+        setup_office_app(setup_ppt)
+        setup_office_app(setup_outlook)
+    except Exception as e:
+        print(e)
+        shutdown()
+        return (0, 0)
     
     if os.path.isdir(source):
         paths = pathlib.Path(source).rglob('*.*')
@@ -415,13 +439,8 @@ def process_folder(target_dir, source):
             handle_error(str(path))
         except KeyboardInterrupt:
             break
-            
-    shutdown_office_app(word.Application)
-    shutdown_office_app(excel.Application)
-    shutdown_office_app(ppt)
-    shutdown_office_app(outlook)
-
-    logfile.close()
+       
+    shutdown()
     print(f'converted {file_count} files with {issue_count} issues')
     return (file_count, issue_count)
 
