@@ -193,6 +193,7 @@ def convert_to_zip(source, extension):
             print(e)
             if os.path.exists(target):
                 shutil.rmtree(target)
+            raise e
     os.remove(source)
     shutil.make_archive(target, 'zip', target)
     
