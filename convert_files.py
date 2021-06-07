@@ -191,7 +191,8 @@ def convert_to_zip(source, extension):
             Archive(source).extractall(target)
         except Exception as e:
             print(e)
-            shutil.rmtree(target)
+            if os.path.exists(target):
+                shutil.rmtree(target)
     os.remove(source)
     shutil.make_archive(target, 'zip', target)
     
