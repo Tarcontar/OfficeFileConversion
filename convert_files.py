@@ -186,10 +186,15 @@ def convert_to_zip(source, extension):
                 raise Exception('file is password protected')
             z.extractall(target)
     else:
-        os.makedirs(target, exist_ok = True)
-        Archive(source).extractall(target)
+        try:
+            os.makedirs(target, exist_ok = True)
+            Archive(source).extractall(target)
+        except Exception as e:
+            print(e)
+            shutil.rmtree(target)
     os.remove(source)
     shutil.make_archive(target, 'zip', target)
+    
     return target + '.zip'
 
 
