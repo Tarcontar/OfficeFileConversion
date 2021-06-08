@@ -265,6 +265,84 @@ class FileConversionTests(TestCase):
         self.assertFalse('doc.doc' in zip.namelist())
         self.assertTrue('doc.docx' in zip.namelist())
         
+    def test_convert_zip_space(self):
+        filename = 'zip_space .zip'
+        expected = 'zip_space.zip'
+        self.copy_file(filename)
+        
+        issue_dir = self.outpath('issue')
+        target_dir = self.outpath('testfiles')
+        self.assertEqual((1, 0), process_folder(issue_dir, target_dir))
+        self.assertFalse(os.path.exists(target_dir + os.path.sep + 'doc'))
+        self.assertTrue(os.path.exists(target_dir + os.path.sep + expected))
+        
+        zip = zipfile.ZipFile(target_dir + os.path.sep + expected)
+        self.assertFalse('doc.doc' in zip.namelist())
+        self.assertTrue('doc.docx' in zip.namelist())
+        
+    def test_convert_7z_space(self):
+        filename = '7z_space .7z'
+        expected = '7z_space.zip'
+        self.copy_file(filename)
+        
+        issue_dir = self.outpath('issue')
+        target_dir = self.outpath('testfiles')
+        self.assertEqual((1, 0), process_folder(issue_dir, target_dir))
+        self.assertFalse(os.path.exists(target_dir + os.path.sep + 'doc'))
+        self.assertTrue(os.path.exists(target_dir + os.path.sep + expected))
+        
+        zip = zipfile.ZipFile(target_dir + os.path.sep + expected)
+        self.assertFalse('doc.doc' in zip.namelist())
+        self.assertTrue('doc.docx' in zip.namelist())
+        
+    def test_convert_rar_space(self):
+        filename = 'rar_space .rar'
+        expected = 'rar_space.zip'
+        self.copy_file(filename)
+        
+        issue_dir = self.outpath('issue')
+        target_dir = self.outpath('testfiles')
+        self.assertEqual((1, 0), process_folder(issue_dir, target_dir))
+        self.assertFalse(os.path.exists(target_dir + os.path.sep + 'doc'))
+        self.assertTrue(os.path.exists(target_dir + os.path.sep + expected))
+        
+        zip = zipfile.ZipFile(target_dir + os.path.sep + expected)
+        self.assertFalse('doc.doc' in zip.namelist())
+        self.assertTrue('doc.docx' in zip.namelist())
+        
+    def test_convert_zip_fake(self):
+        filename = 'zip_fake.zip'
+        expected = 'zip_fake.zip.txt'
+        self.copy_file(filename)
+        
+        issue_dir = self.outpath('issue')
+        target_dir = self.outpath('testfiles')
+        self.assertEqual((0, 1), process_folder(issue_dir, target_dir))
+        self.assertFalse(os.path.exists(target_dir + os.path.sep + filename))
+        self.assertTrue(os.path.exists(target_dir + os.path.sep + expected))
+        
+    def test_convert_7z_fake(self):
+        filename = '7z_fake.7z'
+        expected = '7z_fake.7z.txt'
+        self.copy_file(filename)
+        
+        issue_dir = self.outpath('issue')
+        target_dir = self.outpath('testfiles')
+        self.assertEqual((0, 1), process_folder(issue_dir, target_dir))
+        self.assertFalse(os.path.exists(target_dir + os.path.sep + filename))
+        self.assertTrue(os.path.exists(target_dir + os.path.sep + expected))
+        
+    def test_convert_rar_fake(self):
+        filename = 'rar_fake.rar'
+        expected = 'rar_fake.rar.txt'
+        self.copy_file(filename)
+        
+        issue_dir = self.outpath('issue')
+        target_dir = self.outpath('testfiles')
+        self.assertEqual((0, 1), process_folder(issue_dir, target_dir))
+        self.assertFalse(os.path.exists(target_dir + os.path.sep + filename))
+        self.assertTrue(os.path.exists(target_dir + os.path.sep + expected))
+        
     def test_convert_zip_password(self):
         filename = 'zip_password.zip'
         expected = 'zip_password.zip.txt'

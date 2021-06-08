@@ -43,13 +43,13 @@ malicious_filter = ['pst', 'xlam', 'osd', 'py', 'exe', 'msi', 'bat', 'reg', 'pol
 
 
 #TODO: get from sys.argv
-process_word = False
-process_excel = False
-process_ppt = False
+process_word = True
+process_excel = True
+process_ppt = True
 process_outlook = True
 process_fakefiles = False #not supported right now
-process_malicious = False
-process_archives = False
+process_malicious = True
+process_archives = True
 
 word = None
 excel = None
@@ -194,6 +194,7 @@ def process_outlook(source):
 
 def convert_to_zip(source, extension):
     target = source[:-3] if extension == '7z' else source[:-4]
+    target = target.strip()
     if extension == '7z':
         try:
             with py7zr.SevenZipFile(source, mode='r') as z:
@@ -201,7 +202,6 @@ def convert_to_zip(source, extension):
                     raise Exception('file is password protected')
                 z.extractall(target)
         except Exception as e:
-            print(e)
             if os.path.exists(target):
                 shutil.rmtree(target)
             raise e
@@ -251,7 +251,7 @@ def process_zip(source, extension):
     if not needs_processing:
         return 1
         
-    target_path = source[:-4]
+    target_path = source[:-4].strip()
     print('## extracting...')
     try:
         zip.extractall(target_path)
@@ -466,7 +466,8 @@ def process_folder(target_dir, source):
             print(e)
             if e.winerror in [ACCESS_DENIED, IN_USE]:
                 continue
-            input()
+            issue_count += 1
+            handle_error(str(path))
         except Exception as e:
             issue_count += 1
             print(e)
