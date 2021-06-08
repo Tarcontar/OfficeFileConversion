@@ -9,6 +9,7 @@ source_dir = 'X:\\ZZ\\IF\\' + sys.argv[1]
 target_dir = 'X:\\' + sys.argv[1]
 print(f'Copying files from {source_dir} to {target_dir}')
 
+count = 0
 for path in pathlib.Path(str(source_dir)).rglob('*.*'):
     if os.path.isdir(path):
         continue
@@ -27,4 +28,7 @@ for path in pathlib.Path(str(source_dir)).rglob('*.*'):
     if os.path.exists(target + '.txt'):
         os.remove(target + '.txt')
         
+    count += 1
+        
+print(f'copied {count} files')
 input("Press Enter to continue...")

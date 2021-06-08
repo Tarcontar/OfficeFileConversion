@@ -13,7 +13,7 @@ import win32com
 
 
 ACCESS_DENIED = 5
-
+IN_USE = 32
 
 DOCX_FILE_FORMAT = 12
 DOTX_FILE_FORMAT = 14
@@ -41,13 +41,13 @@ malicious_filter = ['pst', 'xlam', 'osd', 'py', 'exe', 'msi', 'bat', 'reg', 'pol
 
 
 #TODO: get from sys.argv
-process_word = True
-process_excel = True
-process_ppt = True
+process_word = False
+process_excel = False
+process_ppt = False
 process_outlook = True
 process_fakefiles = False #not supported right now
-process_malicious = True
-process_archives = True
+process_malicious = False
+process_archives = False
 
 word = None
 excel = None
@@ -94,14 +94,23 @@ def copy_file(source, target):
 def handle_error(path):
     error_msg = f'ERROR: could not convert \'{path}\' \n'
     print(error_msg)
-    logfile.write(error_msg)
+    try:
+        logfile.write(error_msg)
+    except UnicodeEncodeError as e:
+        print(e)
     placeholder = open(path + '.txt', 'w')
     placeholder.write('file could not be converted please contact your IT')
     placeholder.close()
     print('## copying...')
-    copy_file(path, issue_target_dir + path[2:])
+    try:
+        copy_file(path, issue_target_dir + path[2:])
+    except Exception as e:
+        print(e)
     print('## deleting...')
-    os.remove(path)
+    try:
+        os.remove(path)
+    except Exception as e:
+        print(e)
     
     
 def handle_fake_files(path, extension, extensions_filter):
@@ -181,10 +190,16 @@ def process_outlook(source):
 def convert_to_zip(source, extension):
     target = source[:-3] if extension == '7z' else source[:-4]
     if extension == '7z':
-        with py7zr.SevenZipFile(source, mode='r') as z:
-            if z.needs_password():
-                raise Exception('file is password protected')
-            z.extractall(target)
+        try:
+            with py7zr.SevenZipFile(source, mode='r') as z:
+                if z.needs_password():
+                    raise Exception('file is password protected')
+                z.extractall(target)
+        except Exception as e:
+            print(e)
+            if os.path.exists(target):
+                shutil.rmtree(target)
+            raise e
     else:
         try:
             os.makedirs(target, exist_ok = True)
@@ -196,7 +211,7 @@ def convert_to_zip(source, extension):
             raise e
     os.remove(source)
     shutil.make_archive(target, 'zip', target)
-    
+    shutil.rmtree(target)
     return target + '.zip'
 
 
@@ -233,7 +248,12 @@ def process_zip(source, extension):
         
     target_path = source[:-4]
     print('## extracting...')
-    zip.extractall(target_path)
+    try:
+        zip.extractall(target_path)
+    except Exception as e:
+        if os.path.exists(target_path):
+            shutil.rmtree(target_path)
+        raise e
     zip.close()
         
     count = 0
@@ -427,12 +447,9 @@ def process_folder(target_dir, source):
             file_count += process_file(path)
         except WindowsError as e:
             print(e)
-            if e.winerror == ACCESS_DENIED:
-                # TODO: can we copy in that case?
-                print(e)
-                input()
+            if e.winerror in [ACCESS_DENIED, IN_USE]:
                 continue
-            raise e
+            input()
         except Exception as e:
             issue_count += 1
             print(e)
