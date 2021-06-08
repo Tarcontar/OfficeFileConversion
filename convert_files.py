@@ -15,6 +15,7 @@ import win32com
 ACCESS_DENIED = 5
 IN_USE = 32
 
+
 DOCX_FILE_FORMAT = 12
 DOTX_FILE_FORMAT = 14
 PPTX_FILE_FORMAT = 24
@@ -22,6 +23,7 @@ POTX_FILE_FORMAT = 26
 PPSX_FILE_FORMAT = 28
 XLSX_FILE_FORMAT = 51
 XLTX_FILE_FORMAT = 54
+ACCDB_FILE_FORMAT = 54
 
 ZIP_FILE_MAGIC = '504b0304'
 
@@ -73,10 +75,13 @@ def setup_ppt():
     ppt = win32.gencache.EnsureDispatch('Powerpoint.Application')
     ppt.DisplayAlerts = constants.ppAlertsNone
     
-    
+
 def setup_outlook():
     global outlook
     outlook = win32.gencache.EnsureDispatch('Outlook.Application').GetNamespace('MAPI')
+
+
+#access = win32.gencache.EnsureDispatch('Access.Application')
 
 
 def get_magic(path):
@@ -271,6 +276,18 @@ def process_zip(source, extension):
     shutil.rmtree(target_path)
     return count
 
+  
+def process_access(source, target, format, target_dir):
+    try:
+        database = access.DBEngine.Open(source, WithWindow=False)
+        database.SaveAs(target, format)
+        database.Close()
+        #copy_file(source, target_dir + source[2:])
+        os.remove(source)
+    except Exception as e:
+        print(e)
+        handle_error(source)
+
 
 def process_file(path):
     path = str(path)
@@ -282,7 +299,6 @@ def process_file(path):
     if os.path.basename(path).startswith('~$'):
         os.remove(path)
         return 0
-        
     extension = pathlib.Path(path).suffix[1:].lower()
 
     if process_word and (extension in word_filter or process_fakefiles and extension in word_fake_filter):
@@ -360,6 +376,7 @@ def process_file(path):
             placeholder = open(placeholder_path, 'w')
             placeholder.write('file might be malicious and was moved to a backup location, please contact your IT')
             placeholder.close()
+            
         copy_file(path, issue_target_dir + path[2:])
         os.remove(path)
         return 1
@@ -367,7 +384,7 @@ def process_file(path):
     elif process_archives and extension in archive_filter:
         return process_zip(path, extension)
     return 0
-    
+  
     
 def setup_office_app(func):
     try:
