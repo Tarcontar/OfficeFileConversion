@@ -42,15 +42,6 @@ archive_filter = ['zip', 'rar', '7z']
 malicious_filter = ['pst', 'xlam', 'osd', 'py', 'exe', 'msi', 'bat', 'reg', 'pol', 'ps1', 'psm1', 'psd1', 'pssc', 'psrc']
 
 
-#TODO: get from sys.argv
-process_word = True
-process_excel = True
-process_ppt = True
-process_outlook = True
-process_fakefiles = False #not supported right now
-process_malicious = True
-process_archives = True
-
 word = None
 excel = None
 ppt = None
@@ -129,7 +120,7 @@ def handle_fake_files(path, extension, extensions_filter):
     return path, True
     
 
-def process_word(source, target, format):
+def handle_word(source, target, format):
     if word is None:   
         setup_word()
     doc = word.Documents.Open(source, ConfirmConversions=False, Visible=False, PasswordDocument="invalid")
@@ -139,7 +130,7 @@ def process_word(source, target, format):
     os.remove(source)
     
     
-def process_excel(source, target, format):
+def handle_excel(source, target, format):
     if excel is None:
         setup_excel()
     wb = excel.Workbooks.Open(source, UpdateLinks=False, Password='', WriteResPassword='')
@@ -150,7 +141,7 @@ def process_excel(source, target, format):
     os.remove(source)
     
     
-def process_powerpoint(source, target, format):
+def handle_powerpoint(source, target, format):
     if ppt is None:
         setup_ppt()
     presentation = ppt.Presentations.Open(source + ':::', WithWindow=False)
@@ -159,7 +150,7 @@ def process_powerpoint(source, target, format):
     os.remove(source)
 
 
-def process_outlook(source):
+def handle_outlook(source):
     if outlook is None:
         setup_outlook()
 
@@ -170,11 +161,15 @@ def process_outlook(source):
     
     html_path = source[:-4] + '.html'
     msg.SaveAs(html_path, constants.olHTML)
-    doc = word.Documents.Open(html_path)
-    doc.ExportAsFixedFormat(source[:-4] + '.pdf', 17)
-    doc.Close(False)
-    os.remove(html_path)
-    
+    try:
+        doc = word.Documents.Open(html_path)
+        doc.ExportAsFixedFormat(source[:-4] + '.pdf', 17)
+        doc.Close(False)
+    except Exception as e:
+        raise e
+    finally:
+        os.remove(html_path)
+
     if os.path.exists(source[:-4] + '_files'):
         shutil.rmtree(source[:-4] + '_files')
     if os.path.exists(source[:-4] + '-Dateien'):
@@ -182,14 +177,18 @@ def process_outlook(source):
             
     if not msg.Attachments:
         return
-    
-    count = 0
-    for attachment in msg.Attachments:
-        path = source[:-3] + attachment.FileName
-        attachment.SaveAsFile(path)
-        count += process_file(path)
-    
-    msg.Close(1)
+        
+    try:
+        count = 0
+        for attachment in msg.Attachments:
+            path = source[:-3] + attachment.FileName
+            attachment.SaveAsFile(path)
+            count += handle_file(path)
+
+    except Exception as e:
+        raise e
+    finally:
+        msg.Close(1)
 
 
 def convert_to_zip(source, extension):
@@ -220,7 +219,7 @@ def convert_to_zip(source, extension):
     return target + '.zip'
 
 
-def process_zip(source, extension):
+def handle_zip(source, extension):
     if extension in ['7z', 'rar']:
         source = convert_to_zip(source, extension)
     
@@ -264,7 +263,7 @@ def process_zip(source, extension):
     count = 0
     for path in pathlib.Path(target_path).rglob('*.*'):
         try:
-            count += process_file(path)
+            count += handle_file(path)
         except Exception as e:
             handle_error(source)
             shutil.rmtree(target_path)
@@ -277,7 +276,7 @@ def process_zip(source, extension):
     return count
 
   
-def process_access(source, target, format, target_dir):
+def handle_access(source, target, format, target_dir):
     try:
         database = access.DBEngine.Open(source, WithWindow=False)
         database.SaveAs(target, format)
@@ -289,7 +288,7 @@ def process_access(source, target, format, target_dir):
         handle_error(source)
 
 
-def process_file(path):
+def handle_file(path, process_word=True, process_excel=True, process_ppt=True, process_outlook=True, process_malicious=True, process_archives=True, process_fakefiles=True):
     path = str(path)
     print (path)
     
@@ -318,7 +317,7 @@ def process_file(path):
         else:
             new_path = path + 'x'
         
-        process_word(path, new_path, format)
+        handle_word(path, new_path, format)
         return 1
         
     elif process_excel and (extension in excel_filter or process_fakefiles and extension in excel_fake_filter):
@@ -338,7 +337,7 @@ def process_file(path):
         else:
             new_path = path + 'x'
         
-        process_excel(path, new_path, format)
+        handle_excel(path, new_path, format)
         return 1
 
     elif process_ppt and (extension in ppt_filter or process_fakefiles and extension in ppt_fake_filter):
@@ -360,11 +359,11 @@ def process_file(path):
         else:
             new_path = path + 'x'
 
-        process_powerpoint(path, new_path, format)
+        handle_powerpoint(path, new_path, format)
         return 1
         
     elif process_outlook and extension in outlook_filter:
-        process_outlook(path)
+        handle_outlook(path)
         return 1
         
     elif process_malicious and extension in malicious_filter:
@@ -382,7 +381,7 @@ def process_file(path):
         return 1
         
     elif process_archives and extension in archive_filter:
-        return process_zip(path, extension)
+        return handle_zip(path, extension)
     return 0
   
     
@@ -458,19 +457,30 @@ def process_folder(target_dir, source):
         paths = pathlib.Path(source).rglob('*.*')
     else:
         paths = [source]
+        
+    process_word = False
+    process_excel = False
+    process_ppt = False
+    process_outlook = True
+    process_malicious = False
+    process_archives = False
+    process_fakefiles = False #not supported right now
     
     for path in paths:
         try:
-            file_count += process_file(path)
+            file_count += handle_file(path, process_word, process_excel, process_ppt, process_outlook, process_malicious, process_archives, process_fakefiles)
         except WindowsError as e:
             print(e)
+            print(e.winerror)
             if e.winerror in [ACCESS_DENIED, IN_USE]:
                 continue
+            #input()
             issue_count += 1
             handle_error(str(path))
         except Exception as e:
-            issue_count += 1
             print(e)
+            #input()
+            issue_count += 1
             handle_error(str(path))
         except KeyboardInterrupt:
             break

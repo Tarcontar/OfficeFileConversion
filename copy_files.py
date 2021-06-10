@@ -16,10 +16,13 @@ for path in pathlib.Path(str(source_dir)).rglob('*.*'):
     extension = pathlib.Path(path).suffix[1:].lower()
     if not extension in filter:
         continue
-    
+        
     source = str(path)
     target = source.replace(source_dir, target_dir)
     print(target)
+    
+    if os.path.exists(str(target)[:-3] + 'pdf'):
+        continue
         
     os.makedirs(os.path.dirname(target), exist_ok = True)
     shutil.copyfile(source, target)
