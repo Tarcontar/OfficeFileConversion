@@ -10,6 +10,7 @@ from pyunpack import Archive
 import win32com.client as win32
 from win32com.client import constants
 import win32com
+from datetime import datetime
 
 
 ACCESS_DENIED = 5
@@ -39,7 +40,7 @@ ppt_filter = ['ppt', 'pptm', 'pot', 'potm', 'pps', 'ppsm', 'odp']
 ppt_fake_filter = ['pptx', 'potx', 'ppsx']
 outlook_filter = ['msg']
 archive_filter = ['zip', 'rar', '7z']
-malicious_filter = ['pst', 'xlam', 'osd', 'py', 'exe', 'msi', 'bat', 'reg', 'pol', 'ps1', 'psm1', 'psd1', 'pssc', 'psrc']
+malicious_filter = ['pst', 'dll', 'xlam', 'osd', 'py', 'exe', 'msi', 'bat', 'reg', 'pol', 'ps1', 'psm1', 'psd1', 'pssc', 'psrc']
 
 
 word = None
@@ -154,18 +155,34 @@ def handle_outlook(source):
     if outlook is None:
         setup_outlook()
 
-    tmp_file = legacy_target_dir + source[2:]
-    copy_file(source, tmp_file) # TODO: only workaround for outlook not closing file properly
-    os.remove(source)
-    msg = outlook.OpenSharedItem(tmp_file)
-    
-    html_path = source[:-4] + '.html'
-    msg.SaveAs(html_path, constants.olHTML)
+    if word is None:
+        print('setup word again')
+        setup_word()
+
     try:
-        doc = word.Documents.Open(html_path)
-        doc.ExportAsFixedFormat(source[:-4] + '.pdf', 17)
-        doc.Close(False)
+        tmp_file = legacy_target_dir + source[2:]
+        copy_file(source, tmp_file) # TODO: only workaround for outlook not closing file properly
     except Exception as e:
+        print(e)
+        return
+        
+    print(f'try to open {datetime.now().strftime("%H:%M:%S")}')
+    try:
+        msg = outlook.OpenSharedItem(tmp_file)
+        print(f'opened {datetime.now().strftime("%H:%M:%S")}')
+        html_path = source[:-4] + '.html'
+        msg.SaveAs(html_path, constants.olHTML)
+        print(f'saved as html {datetime.now().strftime("%H:%M:%S")}')
+        doc = word.Documents.Open(html_path)
+        print(f'opened in word {datetime.now().strftime("%H:%M:%S")}')
+        doc.ExportAsFixedFormat(source[:-4] + '.pdf', 17)
+        print(f'exported to pdf {datetime.now().strftime("%H:%M:%S")}')
+        doc.Close(False)
+        print(f'closed word {datetime.now().strftime("%H:%M:%S")}')
+    except Exception as e:
+        print('setting up stuff')
+        setup_word()
+        setup_outlook()
         raise e
     finally:
         os.remove(html_path)
@@ -176,8 +193,10 @@ def handle_outlook(source):
         shutil.rmtree(source[:-4] + '-Dateien')
             
     if not msg.Attachments:
+        os.remove(source)
         return
         
+    print('process attachments')
     try:
         count = 0
         for attachment in msg.Attachments:
@@ -189,6 +208,7 @@ def handle_outlook(source):
         raise e
     finally:
         msg.Close(1)
+        os.remove(source)
 
 
 def convert_to_zip(source, extension):
@@ -219,7 +239,7 @@ def convert_to_zip(source, extension):
     return target + '.zip'
 
 
-def handle_zip(source, extension):
+def handle_zip(source, extension, process_fakefiles=False):
     if extension in ['7z', 'rar']:
         source = convert_to_zip(source, extension)
     
@@ -292,9 +312,6 @@ def handle_file(path, process_word=True, process_excel=True, process_ppt=True, p
     path = str(path)
     print (path)
     
-    if os.path.isdir(path):
-        return 0
-
     if os.path.basename(path).startswith('~$'):
         os.remove(path)
         return 0
@@ -381,7 +398,7 @@ def handle_file(path, process_word=True, process_excel=True, process_ppt=True, p
         return 1
         
     elif process_archives and extension in archive_filter:
-        return handle_zip(path, extension)
+        return handle_zip(path, extension, process_fakefiles)
     return 0
   
     
@@ -389,8 +406,10 @@ def setup_office_app(func):
     try:
         func()
     except AttributeError:
-        shutil.rmtree(f'C:\\Users\\{os.getlogin()}\\AppData\\Local\\Temp\\gen_py')
-        func()
+        try:
+            shutil.rmtree(f'C:\\Users\\{os.getlogin()}\\AppData\\Local\\Temp\\gen_py')
+        finally:
+            func()
       
       
 def shutdown_office_app(app):
@@ -452,6 +471,13 @@ def process_folder(target_dir, source):
         print(e)
         shutdown()
         return (0, 0)
+        
+    #subfolders = [f.path for f in os.scandir(source) if f.is_dir()]
+
+    #for folder in subfolders:
+    #    print(folder)
+    #    if not any(os.scandir(folder)):
+    #        shutil.rmtree(folder)
     
     if os.path.isdir(source):
         paths = pathlib.Path(source).rglob('*.*')
